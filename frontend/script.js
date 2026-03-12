@@ -42,6 +42,13 @@ async function playerMove(r, c, cell) {
         }, 800)
         return
     }
+    if (checkDraw()) {
+        gameOver = true
+        setTimeout(() => {
+            showModal("🤝 Hòa rồi! 😅")
+        }, 800)
+        return
+    }
 
     const res = await fetch("http://127.0.0.1:5000/move", {
         method: "POST",
@@ -69,6 +76,12 @@ async function playerMove(r, c, cell) {
             showModal("🎉 AI thắng! 🏆!")
         }, 800)
 
+        return
+    } if (checkDraw()) {
+        gameOver = true
+        setTimeout(() => {
+            showModal("🤝 Hòa rồi! 😅")
+        }, 800)
         return
     }
     playerTurn = true
@@ -99,6 +112,17 @@ function checkWin(player) {
         }
     }
     return null
+}
+
+function checkDraw() {
+    for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+            if (board[r][c] === ".") {
+                return false
+            }
+        }
+    }
+    return true
 }
 
 function drawWinLine(cells) {

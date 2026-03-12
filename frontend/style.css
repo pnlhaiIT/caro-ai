@@ -1,15 +1,14 @@
 body {
     margin: 0;
-    font-family: sans-serif;
+    height: 100vh;
 
-    /* gradient */
-    background: linear-gradient(180deg,
-            #3fa7a3,
-            #7dd0c9);
+    background: linear-gradient(135deg, #6a11cb, #ff4ecd);
+
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+
+    font-family: Arial, sans-serif;
 }
 
 .container {
