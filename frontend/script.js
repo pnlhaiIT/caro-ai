@@ -160,7 +160,6 @@ function drawWinLine(cells) {
 }
 
 async function aiFirstMove() {
-
     const res = await fetch(`${API}/move`, {
         method: "POST",
         headers: {
@@ -168,9 +167,7 @@ async function aiFirstMove() {
         },
         body: JSON.stringify({ board: board })
     })
-
     const data = await res.json()
-
     const aiCell = boardDiv.children[data.row * SIZE + data.col]
 
     board[data.row][data.col] = "O"
