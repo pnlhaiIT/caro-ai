@@ -5,6 +5,11 @@ from ai import best_move
 
 app = Flask(__name__)
 CORS(app)
+
+@app.route("/")
+def home():
+    return "Caro AI backend đang chạy!"
+
 @app.route("/move", methods=["POST"])
 def move():
     data = request.json
