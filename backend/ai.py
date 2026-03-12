@@ -63,3 +63,17 @@ def minimax(board, depth, alpha, beta, maximizing):
                 break
         return min_eval
 
+def best_move(board):
+    best_score = -math.inf
+    move = None
+
+    for r,c in get_moves(board):
+        board[r][c] = "O"
+        score = minimax(board, 2, -math.inf, math.inf, False)
+
+        board[r][c] = "."
+
+        if score > best_score:
+            best_score = score
+            move = (r,c)
+    return move 
