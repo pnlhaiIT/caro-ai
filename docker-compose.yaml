@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+
+  backend:
+    build: ./backend
+    container_name: caro-backend
+    ports:
+      - "5000:5000"
+
+  frontend:
+    build: ./frontend
+    container_name: caro-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend

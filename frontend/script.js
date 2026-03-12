@@ -4,6 +4,7 @@ let gameOver = false
 let playerTurn = true
 let gameStarted = false
 const boardDiv = document.getElementById("board")
+const API = "http://localhost:5000"
 
 function init() {
     for (let r = 0; r < SIZE; r++) {
@@ -50,7 +51,7 @@ async function playerMove(r, c, cell) {
         return
     }
 
-    const res = await fetch("http://127.0.0.1:5000/move", {
+    const res = await fetch(`${API}/move`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -160,7 +161,7 @@ function drawWinLine(cells) {
 
 async function aiFirstMove() {
 
-    const res = await fetch("http://127.0.0.1:5000/move", {
+    const res = await fetch(`${API}/move`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
