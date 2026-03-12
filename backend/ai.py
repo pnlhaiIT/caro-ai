@@ -116,7 +116,6 @@ def get_moves(board):
                             moves.append((r,c))
                             found = True
                             break
-
                 if found:
                     break
     if not moves:

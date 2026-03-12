@@ -4,18 +4,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PnlhaiIT-Game Tic Tac Toe</title>
+    <title>PnlhaiIT-Game CARO-AI</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <div class="container">
 
-        <h1>TIC - TAC - TOE</h1>
+        <h1>CARO-AI 10X10</h1>
+
+        <div id="players">
+            <span>Bạn: </span><span id="playerInfo">X</span>
+            <span>AI: </span><span id="aiInfo">O</span>
+        </div>
+
+        <div id="turn" style="margin-bottom: 5px;"></div>
 
         <div id="board"></div>
 
-        <button id="restart">Restart</button>
+        <div id="winModal" class="modal">
+            <div class="modal-content">
+                <h2 id="modalText"></h2>
+                <button onclick="restartGame()">Chơi lại</button>
+            </div>
+        </div>
+
+        <button id="startBtn" onclick="startGame()">🎮 Bắt đầu</button>
     </div>
     <script src="script.js"></script>
 </body>
