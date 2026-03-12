@@ -21,8 +21,6 @@ Efficient game tree search
 
 Technologies
 
-C++
-
 Game tree search algorithms
 
 Artificial Intelligence concepts
