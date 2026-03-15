@@ -92,4 +92,4 @@ Return best move
 # Author
 
 Student project demonstrating classical Artificial Intelligence techniques in board game search.<br>
-Phạm Nguyễn Long Hải - DHKTMT20B
+Phạm Nguyễn Long Hải 
