@@ -86,7 +86,6 @@ Return best move
 - JavaScript
 - HTML / CSS
 - Docker
-- Docker Compose
   
 ---
 
