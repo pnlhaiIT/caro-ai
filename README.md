@@ -1,4 +1,4 @@
-# Caro AI (Gomoku AI)
+# Caro AI 10x10
 
 A web-based Gomoku (Caro) game where a player competes against an AI opponent.  
 The AI is implemented using the **Minimax algorithm with Alpha-Beta Pruning** and heuristic board evaluation.
