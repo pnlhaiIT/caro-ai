@@ -1,30 +1,51 @@
 from board import SIZE, check_win
 import math
 
+ttable = {}
+
 def score_pattern(line, player):
     s = "".join(line)
     score = 0
+
     if player == "O":
-        if "OOOOO" in s: score += 100000
-        if ".OOOO." in s: score += 30000
-        if "OOOO." in s or ".OOOO" in s: score += 15000
-        if ".OOO." in s: score += 8000
-        if "OOO." in s or ".OOO" in s: score += 3000
-        if "OO.OO" in s: score += 7000
-        if "OO.O" in s or "O.OO" in s: score += 2000
-        if ".OO." in s: score += 500
+        score += s.count("OOOOO") * 100000
+        score += s.count(".OOOO.") * 30000
+
+        score += s.count("OOOO.") * 15000
+        score += s.count(".OOOO") * 15000
+
+        score += s.count(".OOO.") * 8000
+
+        score += s.count("OOO.") * 3000
+        score += s.count(".OOO") * 3000
+
+        score += s.count("OO.OO") * 7000
+
+        score += s.count("OO.O") * 2000
+        score += s.count("O.OO") * 2000
+
+        score += s.count(".OO.") * 500
+
     else:
-        if "XXXXX" in s: score -= 200000
-        if ".XXXX." in s: score -= 80000
-        if "XXXX." in s or ".XXXX" in s: score -= 50000
+        score -= s.count("XXXXX") * 200000
 
-        if ".XXX." in s: score -= 50000
-        if "XXX." in s or ".XXX" in s: score -= 15000
+        score -= s.count(".XXXX.") * 120000
 
-        if "XX.XX" in s: score -= 50000
-        if "XX.X" in s or "X.XX" in s: score -= 25000
+        score -= s.count("XXXX.") * 60000
+        score -= s.count(".XXXX") * 60000
 
-        if ".XX." in s: score -= 1000
+        score -= s.count("XX.XX") * 120000
+
+        score -= s.count("XX.X") * 40000
+        score -= s.count("X.XX") * 40000
+
+        score -= s.count(".XXX.") * 50000
+
+        score -= s.count("XXX.") * 15000
+        score -= s.count(".XXX") * 15000
+
+        score -= s.count(".XX.") * 1000
+
     return score
 
 def get_lines(board):
@@ -89,12 +110,13 @@ def evaluate(board):
 
     for r in range(SIZE):
         for c in range(SIZE):
+            dist = abs(r-center) + abs(c-center)
             if board[r][c] == "O":
                 score += 2
-                score += 4 - (abs(r-center) + abs(c-center))
+                score += max(0, 4 - dist)
             elif board[r][c] == "X":
                 score -= 2
-                score -= 4 - (abs(r-center) + abs(c-center))
+                score -= max(0, 4 - dist)
     return score
 
 def get_moves(board):
@@ -105,9 +127,11 @@ def get_moves(board):
             if board[r][c] != ".":
                 continue
             found = False
-            for dr in [-1,0,1]:
-                for dc in [-1,0,1]:
+            for dr in range(-2,3):
+                for dc in range(-2,3):
                     if dr == 0 and dc == 0:
+                        continue
+                    if abs(dr) + abs(dc) > 2:
                         continue
                     nr = r + dr
                     nc = c + dc
@@ -128,9 +152,11 @@ def move_score(board, r, c):
     x_count = 0
     o_count = 0
 
-    for dr in [-1,0,1]:
-        for dc in [-1,0,1]:
+    for dr in range(-2,3):
+        for dc in range(-2,3):
             if dr == 0 and dc == 0:
+                continue
+            if abs(dr) + abs(dc) > 2:
                 continue
             nr = r + dr
             nc = c + dc
@@ -145,6 +171,10 @@ def move_score(board, r, c):
     return score
 
 def minimax(board, depth, alpha, beta, maximizing):
+    key = str(board) + str(depth) + str(maximizing)
+    if key in ttable:
+        return ttable[key]
+    
     if check_win(board, "O"):
         return 1000000
     if check_win(board, "X"):
@@ -155,7 +185,7 @@ def minimax(board, depth, alpha, beta, maximizing):
     
     moves = get_moves(board)
     moves.sort(key=lambda m: move_score(board, m[0], m[1]), reverse=True)
-    moves = moves[:12]
+    moves = moves[:20]
 
     if maximizing:
         max_eval = -math.inf
@@ -171,7 +201,8 @@ def minimax(board, depth, alpha, beta, maximizing):
             alpha = max(alpha, eval)
             if alpha >= beta:
                 break
-        return  max_eval
+        ttable[key] = max_eval
+        return max_eval
     else:
         min_eval = math.inf
         for r,c in moves:
@@ -185,6 +216,7 @@ def minimax(board, depth, alpha, beta, maximizing):
             beta = min(beta, eval)
             if alpha >= beta:
                 break
+        ttable[key] = min_eval
         return min_eval
 
 def best_move(board):
@@ -211,7 +243,7 @@ def best_move(board):
 
     for r, c in moves:
         board[r][c] = "O"
-        score = minimax(board, 3, -math.inf, math.inf, False)
+        score = minimax(board, 4, -math.inf, math.inf, False)
         board[r][c] = "."
 
         if score > best_score:
