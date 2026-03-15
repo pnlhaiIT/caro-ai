@@ -20,6 +20,7 @@ The system is designed with a **frontend-backend architecture** and containerize
 ---
 
 # Project Structure
+```
 CARO-AI
 │
 ├── backend
@@ -39,7 +40,7 @@ CARO-AI
 ├── docker-compose.yaml   # Multi-container configuration (frontend + backend)
 ├── .gitignore            # Files ignored by Git
 └── README.md             # Project documentation
-
+```
 ---
 
 # AI Core Flow
