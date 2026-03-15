@@ -44,7 +44,7 @@ CARO-AI
 ---
 
 # AI Core Flow
-
+```
 The AI determines the best move using a sequence of steps:
 Player move
 │
@@ -76,7 +76,7 @@ Evaluate board states
 │
 ▼
 Return best move
-
+```
 ---
 
 # Technologies Used
@@ -92,5 +92,5 @@ Return best move
 
 # Author
 
-Student project demonstrating classical Artificial Intelligence techniques in board game search.
+Student project demonstrating classical Artificial Intelligence techniques in board game search.<br>
 Phạm Nguyễn Long Hải - DHKTMT20B
