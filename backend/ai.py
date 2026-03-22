@@ -96,6 +96,43 @@ def get_lines(board):
 
     return lines
 
+def get_forced_moves(board):
+    moves = get_moves(board)
+
+    for r, c in moves:
+        board[r][c] = "O"
+        if check_win(board, "O"):
+            board[r][c] = "."
+            return [(r, c)]
+        board[r][c] = "."
+
+    block = []
+    for r, c in moves:
+        board[r][c] = "X"
+        if check_win(board, "X"):
+            block.append((r, c))
+        board[r][c] = "."
+
+    if block:
+        return block
+    return []
+
+def proximity_score(board, r, c):
+    score = 0
+    for dr in range(-2,3):
+        for dc in range(-2,3):
+            nr = r + dr
+            nc = c + dc
+            if 0 <= nr < SIZE and 0 <= nc < SIZE:
+                if (nr, nc) == (r, c):
+                    continue
+                if board[nr][nc] == "O":
+                    score += 2
+                elif board[nr][nc] == "X":
+                    score += 1
+    return score
+
+
 def evaluate(board):
     score = 0
     lines = get_lines(board)
@@ -106,17 +143,18 @@ def evaluate(board):
         score += score_pattern(line, "O")
         score += score_pattern(line, "X")
 
-    center = SIZE // 2
-
     for r in range(SIZE):
         for c in range(SIZE):
-            dist = abs(r-center) + abs(c-center)
+            if board[r][c] == ".":
+                continue
+
             if board[r][c] == "O":
                 score += 2
-                score += max(0, 4 - dist)
-            elif board[r][c] == "X":
+                score += proximity_score(board, r, c)
+            else:
                 score -= 2
-                score -= max(0, 4 - dist)
+                score -= proximity_score(board, r, c)
+
     return score
 
 def get_moves(board):
@@ -131,7 +169,7 @@ def get_moves(board):
                 for dc in range(-2,3):
                     if dr == 0 and dc == 0:
                         continue
-                    if abs(dr) + abs(dc) > 2:
+                    if abs(dr) + abs(dc) > 1:
                         continue
                     nr = r + dr
                     nc = c + dc
@@ -148,9 +186,19 @@ def get_moves(board):
     return moves
 
 def move_score(board, r, c):
+    board[r][c] = "O"
+    if check_win(board, "O"):
+        board[r][c] = "."
+        return 1000000
+
+    board[r][c] = "X"
+    if check_win(board, "X"):
+        board[r][c] = "."
+        return 900000
+
+    board[r][c] = "."
     score = 0
     x_count = 0
-    o_count = 0
 
     for dr in range(-2,3):
         for dc in range(-2,3):
@@ -162,7 +210,6 @@ def move_score(board, r, c):
             nc = c + dc
             if 0 <= nr < SIZE and 0 <= nc < SIZE:
                 if board[nr][nc] == "O":
-                    o_count += 1
                     score += 2
                 elif board[nr][nc] == "X":
                     x_count += 1
@@ -171,7 +218,7 @@ def move_score(board, r, c):
     return score
 
 def minimax(board, depth, alpha, beta, maximizing):
-    key = str(board) + str(depth) + str(maximizing)
+    key = (tuple(tuple(row) for row in board), depth, maximizing)
     if key in ttable:
         return ttable[key]
     
@@ -183,9 +230,17 @@ def minimax(board, depth, alpha, beta, maximizing):
     if depth == 0:
         return evaluate(board)
     
-    moves = get_moves(board)
+    forced = get_forced_moves(board)
+    if forced:
+        moves = forced
+    else:
+        moves = get_moves(board)
+
     moves.sort(key=lambda m: move_score(board, m[0], m[1]), reverse=True)
-    moves = moves[:20]
+    if depth >= 3:
+        moves = moves[:15]
+    else:
+        moves = moves[:30]
 
     if maximizing:
         max_eval = -math.inf
@@ -220,6 +275,7 @@ def minimax(board, depth, alpha, beta, maximizing):
         return min_eval
 
 def best_move(board):
+    ttable.clear()
     moves = get_moves(board)
 
     for r, c in moves:
@@ -237,7 +293,7 @@ def best_move(board):
         board[r][c] = "."
 
     moves.sort(key=lambda m: move_score(board, m[0], m[1]), reverse=True)
-    moves = moves[:22]
+    moves = moves[:20]
     best_score = -math.inf
     move = None
 
