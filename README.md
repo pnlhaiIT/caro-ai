@@ -1,26 +1,95 @@
-# caro-ai
-This project implements a Caro (Gomoku) game AI using the Minimax algorithm optimized with Alpha–Beta Pruning.
+# Caro AI 10x10
 
-Caro is a two-player strategy game played on a grid board where players take turns placing their marks (X or O). The objective is to form a line of five consecutive pieces horizontally, vertically, or diagonally.
+A web-based Gomoku (Caro) game where a player competes against an AI opponent.  
+The AI is implemented using the **Minimax algorithm with Alpha-Beta Pruning** and heuristic board evaluation.
 
-To create an intelligent computer opponent, this project uses the Minimax algorithm to evaluate possible moves and determine the optimal strategy. Alpha–Beta Pruning is applied to reduce the number of nodes evaluated in the game tree by eliminating branches that cannot influence the final decision.
+The system is designed with a **frontend-backend architecture** and containerized using **Docker**.
 
-This optimization significantly improves the performance of the AI, allowing faster decision-making while maintaining optimal gameplay.
+---
 
-Features
+# Features
 
-Caro (Gomoku) board implementation
+- Play Gomoku (Caro) on a 10x10 board
+- AI opponent using classical game-search algorithms
+- Minimax search with Alpha-Beta pruning
+- Heuristic board evaluation based on pattern recognition
+- Web interface using HTML, CSS, and JavaScript
+- REST API built with Flask
+- Containerized deployment using Docker and Docker Compose
 
-AI opponent using Minimax
+---
 
-Optimization with Alpha-Beta Pruning
+# Project Structure
+```
+  CARO-AI
+  │
+  ├── backend
+  │ ├── ai.py               # Core AI engine (minimax, alpha-beta pruning, evaluation)
+  │ ├── board.py            # Board representation and game rules (check_win, SIZE)
+  │ ├── app.py              # Flask API server handling player moves and AI responses
+  │ ├── requirements.txt    # Python dependencies
+  │ ├── Dockerfile          # Backend container configuration
+  │ └── pycache/            # Python compiled cache (auto-generated)
+  │
+  ├── frontend
+  │ ├── index.html          # Main UI layout of the game
+  │ ├── script.js           # Frontend game logic and API communication
+  │ ├── style.css           # Game interface styling
+  │ └── Dockerfile          # Frontend container configuration
+  │
+  ├── docker-compose.yaml   # Multi-container configuration (frontend + backend)
+  ├── .gitignore            # Files ignored by Git
+  └── README.md             # Project documentation
+```
+---
 
-Game state evaluation function
+# AI Core Flow
+```
+The AI determines the best move using a sequence of steps:
+Player move
+    │
+    ▼
+Receive board state
+    │
+    ▼
+Generate candidate moves
+(get_moves)
+    │
+    ▼
+Prioritize promising moves
+(move_score)
+    │
+    ▼
+Limit search space
+(top N moves)
+    │
+    ▼
+Run minimax search
+    │
+    ▼
+Apply alpha-beta pruning
+(remove unnecessary branches)
+    │
+    ▼
+Evaluate board states
+(evaluate)
+    │
+    ▼
+Return best move
+```
+---
 
-Efficient game tree search
+# Technologies Used
 
-Technologies
+- Python
+- Flask
+- JavaScript
+- HTML / CSS
+- Docker
+  
+---
 
-Game tree search algorithms
+# Author
 
-Artificial Intelligence concepts
+Student project demonstrating classical Artificial Intelligence techniques in board game search.<br>
+Phạm Nguyễn Long Hải 
