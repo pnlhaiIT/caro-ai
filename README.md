@@ -47,34 +47,34 @@ The system is designed with a **frontend-backend architecture** and containerize
 ```
 The AI determines the best move using a sequence of steps:
 Player move
-    │
-    ▼
+     │
+     ▼
 Receive board state
-    │
-    ▼
+     │
+     ▼
 Generate candidate moves
 (get_moves)
-    │
-    ▼
+     │
+     ▼
 Prioritize promising moves
 (move_score)
-    │
-    ▼
+     │
+     ▼
 Limit search space
 (top N moves)
-    │
-    ▼
+     │
+     ▼
 Run minimax search
-    │
-    ▼
+     │
+     ▼
 Apply alpha-beta pruning
 (remove unnecessary branches)
-    │
-    ▼
+     │
+     ▼
 Evaluate board states
 (evaluate)
-    │
-    ▼
+     │
+     ▼
 Return best move
 ```
 ---

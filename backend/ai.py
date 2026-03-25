@@ -1,38 +1,54 @@
 from board import SIZE, check_win
 import math
+import random
 
-ttable = {}
+DIRECTIONS = [(1,0), (0,1), (1,1), (1,-1)]
 
-def score_pattern(line, player):
-    s = "".join(line)
+def get_moves(board):
+    moves = set()
+    has_piece = False
+
+    for r in range(SIZE):
+        for c in range(SIZE):
+            if board[r][c] != ".":
+                has_piece = True
+                for dr in range(-2, 3):
+                    for dc in range(-2, 3):
+                        nr, nc = r + dr, c + dc
+                        if 0 <= nr < SIZE and 0 <= nc < SIZE:
+                            if board[nr][nc] == ".":
+                                moves.add((nr, nc))
+    if not has_piece:
+        return [(random.randint(0, SIZE-1), random.randint(0, SIZE-1))]
+
+    return list(moves)
+
+def move_score(board, r, c):
     score = 0
 
-    if player == "O":
-        score += s.count("OOOOO") * 1000000
-        score += s.count(".OOOO.") * 500000
-        score += s.count("OOOO.") * 250000
-        score += s.count(".OOOO") * 250000
-        score += s.count(".OOO.") * 50000
-        score += s.count("OOO.") * 15000
-        score += s.count(".OOO") * 15000
-        score += s.count("OO.OO") * 30000
-        score += s.count("OO.O") * 5000
-        score += s.count("O.OO") * 5000
-        score += s.count(".OO.") * 500
-    else:  # X (opponent)
-        score -= s.count("XXXXX") * 2000000
-        score -= s.count(".XXXX.") * 600000
-        score -= s.count("XXXX.") * 300000
-        score -= s.count(".XXXX") * 300000
-        score -= s.count("XX.XX") * 600000
-        score -= s.count("XX.X") * 100000
-        score -= s.count("X.XX") * 100000
-        score -= s.count(".XXX.") * 150000
-        score -= s.count("XXX.") * 50000
-        score -= s.count(".XXX") * 50000
-        score -= s.count(".XX.") * 5000
+    for dr, dc in DIRECTIONS:
+        s = get_line(board, r, c, dr, dc, "O")
+
+        score += s.count("O") * 2
+        score += s.count("X") * 3
+
+    center = SIZE // 2
+    score -= abs(r - center) + abs(c - center)
 
     return score
+
+def get_line(board, r, c, dr, dc, player):
+    line = []
+
+    for i in range(-4, 5):
+        nr = r + dr*i
+        nc = c + dc*i
+        if 0 <= nr < SIZE and 0 <= nc < SIZE:
+            line.append(board[nr][nc])
+        else:
+            line.append("#")
+
+    return "".join(line)
 
 def get_lines(board):
     lines = []
@@ -43,175 +59,286 @@ def get_lines(board):
     for c in range(SIZE):
         lines.append([board[r][c] for r in range(SIZE)])
 
-    for r in range(SIZE):
-        diag1, diag2 = [], []
-        i,j = r,0
-        while i < SIZE and j < SIZE:
-            diag1.append(board[i][j])
-            diag2.append(board[i][SIZE-1-j])
-            i += 1
-            j += 1
-        lines.append(diag1)
-        lines.append(diag2)
-    for c in range(1, SIZE):
-        diag1, diag2 = [], []
-        i,j = 0,c
-        while i < SIZE and j < SIZE:
-            diag1.append(board[i][j])
-            diag2.append(board[i][SIZE-1-j])
-            i += 1
-            j += 1
-        lines.append(diag1)
-        lines.append(diag2)
+    for start_r in range(SIZE):
+        diag = []
+        r, c = start_r, 0
+        while r < SIZE and c < SIZE:
+            diag.append(board[r][c])
+            r += 1
+            c += 1
+        if len(diag) >= 5:
+            lines.append(diag)
+
+    for start_c in range(1, SIZE):
+        diag = []
+        r, c = 0, start_c
+        while r < SIZE and c < SIZE:
+            diag.append(board[r][c])
+            r += 1
+            c += 1
+        if len(diag) >= 5:
+            lines.append(diag)
+
+    for start_r in range(SIZE):
+        diag = []
+        r, c = start_r, SIZE - 1
+        while r < SIZE and c >= 0:
+            diag.append(board[r][c])
+            r += 1
+            c -= 1
+        if len(diag) >= 5:
+            lines.append(diag)
+
+    for start_c in range(SIZE - 2, -1, -1):
+        diag = []
+        r, c = 0, start_c
+        while r < SIZE and c >= 0:
+            diag.append(board[r][c])
+            r += 1
+            c -= 1
+        if len(diag) >= 5:
+            lines.append(diag)
 
     return lines
 
-def get_forced_moves(board):
-    moves_to_block = set()
+def check_threat_at(board, r, c):
+    board[r][c] = "X"
 
-    def add_blocks(line, r_start, c_start, dr, dc):
-        s = "".join(line)
-        idx = s.find(".XXX.")
-        while idx != -1:
-            moves_to_block.add((r_start + idx*dr, c_start + idx*dc))
-            moves_to_block.add((r_start + (idx+4)*dr, c_start + (idx+4)*dc))
-            idx = s.find(".XXX.", idx+1)
-
-        idx = s.find("XXXX.")
-        while idx != -1:
-            moves_to_block.add((r_start + (idx+4)*dr, c_start + (idx+4)*dc))
-            idx = s.find("XXXX.", idx+1)
-        idx = s.find(".XXXX")
-        while idx != -1:
-            moves_to_block.add((r_start + idx*dr, c_start + idx*dc))
-            idx = s.find(".XXXX", idx+1)
-
-        idx = s.find("XX.X")
-        while idx != -1:
-            moves_to_block.add((r_start + (idx+2)*dr, c_start + (idx+2)*dc))
-            idx = s.find("XX.X", idx+1)
-        idx = s.find("X.XX")
-        while idx != -1:
-            moves_to_block.add((r_start + (idx+1)*dr, c_start + (idx+1)*dc))
-            idx = s.find("X.XX", idx+1)
-
-    for r in range(SIZE):
-        add_blocks(board[r], r, 0, 0, 1)
-
-    for c in range(SIZE):
-        col = [board[r][c] for r in range(SIZE)]
-        add_blocks(col, 0, c, 1, 0)
-
-    for r in range(SIZE):
-        diag = []
-        rr, cc = r, 0
-        while rr < SIZE and cc < SIZE:
-            diag.append(board[rr][cc])
-            rr += 1
-            cc += 1
-        add_blocks(diag, r, 0, 1, 1)
-    for c in range(1, SIZE):
-        diag = []
-        rr, cc = 0, c
-        while rr < SIZE and cc < SIZE:
-            diag.append(board[rr][cc])
-            rr += 1
-            cc += 1
-        add_blocks(diag, 0, c, 1, 1)
-
-    for r in range(SIZE):
-        diag = []
-        rr, cc = r, SIZE-1
-        while rr < SIZE and cc >= 0:
-            diag.append(board[rr][cc])
-            rr += 1
-            cc -= 1
-        add_blocks(diag, r, SIZE-1, 1, -1)
-    for c in range(SIZE-2, -1, -1):
-        diag = []
-        rr, cc = 0, c
-        while rr < SIZE and cc >= 0:
-            diag.append(board[rr][cc])
-            rr += 1
-            cc -= 1
-        add_blocks(diag, 0, c, 1, -1)
-
-    return list(moves_to_block)
-
-def proximity_score(board, r, c):
+    if check_win(board, "X"):
+        board[r][c] = "."
+        return 100000
+    
     score = 0
-    for dr in range(-2,3):
-        for dc in range(-2,3):
-            nr, nc = r + dr, c + dc
-            if 0 <= nr < SIZE and 0 <= nc < SIZE and (nr,nc)!=(r,c):
-                if board[nr][nc] == "O":
-                    score += 2
-                elif board[nr][nc] == "X":
-                    score += 1
+
+    for dr, dc in DIRECTIONS:
+        s = get_line(board, r, c, dr, dc, "X")
+
+        if ".XXX.X." in s or ".X.XXX." in s or "XX.XX" in s:
+            score += 5000
+
+        if (
+            ".XXX." in s or
+            "..XXX." in s or
+            ".XXX.." in s or
+            "..XXX.." in s
+        ):
+            score += 2000
+
+        if ".XX.X." in s or ".X.XX." in s:
+            score += 800
+    board[r][c] = "."
     return score
 
-def evaluate(board):
-    score = 0
-    lines = get_lines(board)
-    for line in lines:
-        if len(line) < 5:
-            continue
-        score += score_pattern(line, "O")
-        score += score_pattern(line, "X")
-    occupied = [(r,c) for r in range(SIZE) for c in range(SIZE) if board[r][c] != "."]
-    for r, c in occupied:
-        if board[r][c] == "O":
-            score += 2 + proximity_score(board, r, c)
-        else:
-            score -= 2 + proximity_score(board, r, c)
-    return score
+def get_urgent_moves(board):
+    moves = set()
+    has_piece = False
 
-def get_moves(board):
-    moves = []
     for r in range(SIZE):
         for c in range(SIZE):
             if board[r][c] != ".":
-                continue
-            found = False
-            for dr in range(-2,3):
-                for dc in range(-2,3):
-                    if dr==0 and dc==0:
-                        continue
-                    nr,nc = r+dr,c+dc
-                    if 0<=nr<SIZE and 0<=nc<SIZE and board[nr][nc]!=".":
-                        moves.append((r,c))
-                        found = True
-                        break
-                if found:
-                    break
-    if not moves:
-        return [(SIZE//2, SIZE//2)]
-    if len(moves) > 40:
-        return moves[:40]
-    return moves
+                has_piece = True
+                for dr in range(-3, 4):   
+                    for dc in range(-3, 4):
+                        nr, nc = r + dr, c + dc
+                        if 0 <= nr < SIZE and 0 <= nc < SIZE:
+                            if board[nr][nc] == ".":
+                                moves.add((nr, nc))
+    if not has_piece:
+        return [(SIZE // 2, SIZE // 2)]
 
-def move_score(board, r, c):
+    return list(moves)
+
+def collect_pattern_blocks(line, coords):
+    s = "".join(line)
+    blocks = []
+
+    idx = 0
+    while True:
+        idx = s.find(".XXXX.", idx)
+        if idx == -1:
+            break
+        blocks.append((coords[idx], 100000))
+        blocks.append((coords[idx + 5], 100000))
+        idx += 1
+
+    idx = 0
+    while True:
+        idx = s.find("XXXX.", idx)
+        if idx == -1:
+            break
+        blocks.append((coords[idx + 4], 90000))
+        idx += 1
+
+    idx = 0
+    while True:
+        idx = s.find(".XXXX", idx)
+        if idx == -1:
+            break
+        blocks.append((coords[idx], 90000))
+        idx += 1
+
+    idx = 0
+    while True:
+        idx = s.find("XX.XX", idx)
+        if idx == -1:
+            break
+        blocks.append((coords[idx + 2], 5000))
+        idx += 1
+
+    idx = 0
+    while True:
+        idx = s.find("XXX.X", idx)
+        if idx == -1:
+            break
+        blocks.append((coords[idx + 3], 5000))
+        idx += 1
+
+    idx = 0
+    while True:
+        idx = s.find("X.XXX", idx)
+        if idx == -1:
+            break
+        blocks.append((coords[idx + 1], 5000))
+        idx += 1
+
+    idx = 0
+    while True:
+        idx = s.find(".XXX.", idx)
+        if idx == -1:
+            break
+        blocks.append((coords[idx], 2000))
+        blocks.append((coords[idx + 4], 2000))
+        idx += 1
+
+    idx = 0
+    while True:
+        idx = s.find(".XX.X.", idx)
+        if idx == -1:
+            break
+        blocks.append((coords[idx + 3], 800))
+        idx += 1
+
+    idx = 0
+    while True:
+        idx = s.find(".X.XX.", idx)
+        if idx == -1:
+            break
+        blocks.append((coords[idx + 2], 800))
+        idx += 1
+
+    return blocks
+
+def existing_threat_block(board):
+    candidate_scores = {}
+
+    def add_blocks_from_line(line, coords):
+        for pos, w in collect_pattern_blocks(line, coords):
+            r, c = pos
+            if board[r][c] == ".":
+                candidate_scores[(r, c)] = candidate_scores.get((r, c), 0) + w
+
+    for r in range(SIZE):
+        line = [board[r][c] for c in range(SIZE)]
+        coords = [(r, c) for c in range(SIZE)]
+        add_blocks_from_line(line, coords)
+
+    for c in range(SIZE):
+        line = [board[r][c] for r in range(SIZE)]
+        coords = [(r, c) for r in range(SIZE)]
+        add_blocks_from_line(line, coords)
+
+    for start_r in range(SIZE):
+        line, coords = [], []
+        r, c = start_r, 0
+        while r < SIZE and c < SIZE:
+            line.append(board[r][c])
+            coords.append((r, c))
+            r += 1
+            c += 1
+        if len(line) >= 5:
+            add_blocks_from_line(line, coords)
+
+    for start_c in range(1, SIZE):
+        line, coords = [], []
+        r, c = 0, start_c
+        while r < SIZE and c < SIZE:
+            line.append(board[r][c])
+            coords.append((r, c))
+            r += 1
+            c += 1
+        if len(line) >= 5:
+            add_blocks_from_line(line, coords)
+
+    for start_r in range(SIZE):
+        line, coords = [], []
+        r, c = start_r, SIZE - 1
+        while r < SIZE and c >= 0:
+            line.append(board[r][c])
+            coords.append((r, c))
+            r += 1
+            c -= 1
+        if len(line) >= 5:
+            add_blocks_from_line(line, coords)
+
+    for start_c in range(SIZE - 2, -1, -1):
+        line, coords = [], []
+        r, c = 0, start_c
+        while r < SIZE and c >= 0:
+            line.append(board[r][c])
+            coords.append((r, c))
+            r += 1
+            c -= 1
+        if len(line) >= 5:
+            add_blocks_from_line(line, coords)
+
+    if not candidate_scores:
+        return None
+
+    return max(candidate_scores, key=candidate_scores.get)
+
+def winning_move(board):
+    moves = get_moves(board)
+
+    for r, c in moves:
+        board[r][c] = "O"
+        if check_win(board, "O"):
+            board[r][c] = "."
+            return (r, c)
+        board[r][c] = "."
+
+    return None
+
+def urgent_move(board):
+    moves = get_urgent_moves(board)
+
+    best_move = None
+    best_score = 0
+
+    for r, c in moves:
+        score = check_threat_at(board, r, c)
+
+        if score >= 100000:
+            return (r, c)
+
+        if score > best_score:
+            best_score = score
+            best_move = (r, c)
+
+    return best_move if best_score > 0 else None
+
+def evaluate(board):
     score = 0
-    x_count = 0
-    for dr in range(-2,3):
-        for dc in range(-2,3):
-            if dr==0 and dc==0 or abs(dr)+abs(dc)>2:
-                continue
-            nr,nc = r+dr,c+dc
-            if 0<=nr<SIZE and 0<=nc<SIZE:
-                if board[nr][nc]=="O":
-                    score += 2
-                elif board[nr][nc]=="X":
-                    x_count += 1
-                    score += 4
-    score += x_count*3
+
+    for line in get_lines(board):
+        s = "".join(line)
+        score += s.count("OOOO") * 10000
+        score += s.count("OOO") * 1000
+        score -= s.count("XXXX") * 20000
+        score -= s.count("XXX") * 2000
+
     return score
 
 def minimax(board, depth, alpha, beta, maximizing):
-    key = (tuple(tuple(row) for row in board), depth, maximizing)
-    if key in ttable:
-        return ttable[key]
-
     if check_win(board, "O"):
         return 1000000
     if check_win(board, "X"):
@@ -219,59 +346,75 @@ def minimax(board, depth, alpha, beta, maximizing):
     if depth == 0:
         return evaluate(board)
 
-    forced = get_forced_moves(board)
-    if forced:
-        moves = forced
-    else:
-        moves = get_moves(board)
-        moves.sort(key=lambda m: move_score(board, m[0], m[1]), reverse=True)
-        moves = moves[:20]
+    moves = get_moves(board)
+    moves.sort(key=lambda m: move_score(board, m[0], m[1]), reverse=True)
+    moves = moves[:10]  
 
     if maximizing:
         max_eval = -math.inf
-        for r,c in moves:
+        for r, c in moves:
             board[r][c] = "O"
-            eval = minimax(board, depth-1, alpha, beta, False)
+            val = minimax(board, depth-1, alpha, beta, False)
             board[r][c] = "."
-            max_eval = max(max_eval, eval)
-            alpha = max(alpha, eval)
+            max_eval = max(max_eval, val)
+            alpha = max(alpha, val)
             if alpha >= beta:
                 break
-        ttable[key] = max_eval
         return max_eval
     else:
         min_eval = math.inf
-        for r,c in moves:
+        for r, c in moves:
             board[r][c] = "X"
-            eval = minimax(board, depth-1, alpha, beta, True)
+            val = minimax(board, depth-1, alpha, beta, True)
             board[r][c] = "."
-            min_eval = min(min_eval, eval)
-            beta = min(beta, eval)
+            min_eval = min(min_eval, val)
+            beta = min(beta, val)
             if alpha >= beta:
                 break
-        ttable[key] = min_eval
         return min_eval
 
 def best_move(board):
-    ttable.clear()
 
-    forced = get_forced_moves(board)
-    if forced:
-        return forced[0]
+    win = winning_move(board)
+    if win:
+        return win
+
+    block_existing = existing_threat_block(board)
+    if block_existing:
+        return block_existing
+
+    urgent = urgent_move(board)
+    if urgent:
+        return urgent
 
     moves = get_moves(board)
+
+    if len(moves) == 1:
+        return moves[0]
+
     moves.sort(key=lambda m: move_score(board, m[0], m[1]), reverse=True)
-    moves = moves[:20]
+
+    if len(moves) > 12:       
+        limit = 20
+        depth = 3
+    else:                    
+        limit = 10            
+        depth = 4     
+
+    limit = 8 if len(moves) > 12 else 10
+    moves = moves[:limit]
 
     best_score = -math.inf
-    move = None
+    best = moves[0]
 
-    for r,c in moves:
+    for r, c in moves:
         board[r][c] = "O"
-        depth = 5 if len(moves)<10 else 4
-        score = minimax(board, depth, -math.inf, math.inf, False)
+
+        score = minimax(board, depth, -math.inf, math.inf, False) 
         board[r][c] = "."
+
         if score > best_score:
             best_score = score
-            move = (r,c)
-    return move
+            best = (r, c)
+
+    return best
