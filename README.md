@@ -34,8 +34,7 @@ CARO-AI
 │       ├── script.js       # Frontend game logic and API communication
 │       └── style.css       # Game interface styling
 │
-├── Dockerfile              # Backend container configuration (builds engine/)
-├── docker-compose.yaml     # Optional multi-container setup
+├── Dockerfile              # Backend container configuration (builds engine/)   
 ├── .gitignore              # Files ignored by Git
 └── README.md               # Project documentation
 ```
