@@ -21,25 +21,23 @@ The system is designed with a **frontend-backend architecture** and containerize
 
 # Project Structure
 ```
-  CARO-AI
-  │
-  ├── backend
-  │ ├── ai.py               # Core AI engine (minimax, alpha-beta pruning, evaluation)
-  │ ├── board.py            # Board representation and game rules (check_win, SIZE)
-  │ ├── app.py              # Flask API server handling player moves and AI responses
-  │ ├── requirements.txt    # Python dependencies
-  │ ├── Dockerfile          # Backend container configuration
-  │ └── pycache/            # Python compiled cache (auto-generated)
-  │
-  ├── frontend
-  │ ├── index.html          # Main UI layout of the game
-  │ ├── script.js           # Frontend game logic and API communication
-  │ ├── style.css           # Game interface styling
-  │ └── Dockerfile          # Frontend container configuration
-  │
-  ├── docker-compose.yaml   # Multi-container configuration (frontend + backend)
-  ├── .gitignore            # Files ignored by Git
-  └── README.md             # Project documentation
+CARO-AI
+│
+├── engine                 
+│   ├── ai.py               # Core AI engine (minimax, alpha-beta pruning, evaluation)
+│   ├── board.py            # Board representation and game rules (check_win, SIZE)
+│   ├── app.py              # Flask API server handling player moves and AI responses
+│   ├── requirements.txt    # Dependencies
+│   ├── templates/          
+│   │   └── index.html      # Main UI layout of the game
+│   └── static/             
+│       ├── script.js       # Frontend game logic and API communication
+│       └── style.css       # Game interface styling
+│
+├── Dockerfile              # Backend container configuration (builds engine/)
+├── docker-compose.yaml     # Optional multi-container setup
+├── .gitignore              # Files ignored by Git
+└── README.md               # Project documentation
 ```
 ---
 
