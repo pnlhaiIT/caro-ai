@@ -4,7 +4,7 @@ let gameOver = false
 let playerTurn = true
 let gameStarted = false
 const boardDiv = document.getElementById("board")
-const API = "https://caro-backend-dqh6.onrender.com"
+const API = window.location.origin
 
 function init() {
     for (let r = 0; r < SIZE; r++) {

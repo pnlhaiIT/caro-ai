@@ -23,14 +23,59 @@ def get_moves(board):
 
     return list(moves)
 
+def attack_pattern_score(board, r, c):
+    score = 0
+    patterns = [
+        "OOOO", ".OOO.", "OO.OO", ".OO.O.", ".OO.",  
+        "OOOO.", ".OOOO", "OO.O.", ".O.OO"           
+    ]
+    for dr, dc in DIRECTIONS:
+        line = get_line(board, r, c, dr, dc, "O")
+        for p in patterns:
+            if p in line:
+                if p in ["OOOO", "OOOO.", ".OOOO"]:
+                    score += 10000
+                elif p == ".OOO.":
+                    score += 3000
+                elif p in ["OO.OO", ".OO.O.", "OO.O.", ".O.OO"]:
+                    score += 1500
+                elif p == ".OO.":
+                    score += 200
+    return score
+
+def near_win_score(board, r, c):
+    score = 0
+    for dr, dc in DIRECTIONS:
+        line = get_line(board, r, c, dr, dc, "O")
+        if "OOO." in line or ".OOO" in line:
+            score += 5000
+        if "OO." in line or ".OO" in line:
+            score += 500
+    return score
+
+
+def defensive_pattern_score(board, r, c):
+    score = 0
+    patterns = ["XX.XX", "X.XX.", ".XX.X", "XXX..", "..XXX"]
+    for dr, dc in DIRECTIONS:
+        line = get_line(board, r, c, dr, dc, "X")
+        for p in patterns:
+            if p in line:
+                score += 2000
+    return score
+
 def move_score(board, r, c):
     score = 0
 
     for dr, dc in DIRECTIONS:
         s = get_line(board, r, c, dr, dc, "O")
-
-        score += s.count("O") * 2
         score += s.count("X") * 3
+        score += s.count("O") * 2
+
+    score += attack_pattern_score(board, r, c)
+    score += near_win_score(board, r, c)
+
+    score += defensive_pattern_score(board, r, c)
 
     center = SIZE // 2
     score -= abs(r - center) + abs(c - center)
@@ -374,7 +419,6 @@ def minimax(board, depth, alpha, beta, maximizing):
         return min_eval
 
 def best_move(board):
-
     win = winning_move(board)
     if win:
         return win
@@ -394,25 +438,18 @@ def best_move(board):
 
     moves.sort(key=lambda m: move_score(board, m[0], m[1]), reverse=True)
 
-    if len(moves) > 12:       
-        limit = 20
-        depth = 3
-    else:                    
-        limit = 10            
-        depth = 4     
-
     limit = 8 if len(moves) > 12 else 10
     moves = moves[:limit]
+
+    depth = 3  
 
     best_score = -math.inf
     best = moves[0]
 
     for r, c in moves:
         board[r][c] = "O"
-
-        score = minimax(board, depth, -math.inf, math.inf, False) 
+        score = minimax(board, depth, -math.inf, math.inf, False)
         board[r][c] = "."
-
         if score > best_score:
             best_score = score
             best = (r, c)

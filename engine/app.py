@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 
 from ai import best_move
@@ -8,7 +8,7 @@ CORS(app)
 
 @app.route("/")
 def home():
-    return "Caro AI backend đang chạy!"
+    return render_template("index.html")
 
 @app.route("/move", methods=["POST"])
 def move():
