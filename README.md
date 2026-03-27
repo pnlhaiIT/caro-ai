@@ -86,7 +86,7 @@ Return best move
   
 ---
 
-## Quick Start
+# Quick Start
 
 ```bash
 git clone git@github.com:pnlhaiIT/caro-ai.git
