@@ -89,7 +89,7 @@ Return best move
 # Quick Start
 
 ```bash
-git clone git@github.com:pnlhaiIT/caro-ai.git
+git clone https://github.com/pnlhaiIT/caro-ai.git
 cd engine
 pip install -r requirements.txt
 python app.py
