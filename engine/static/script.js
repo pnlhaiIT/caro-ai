@@ -15,6 +15,11 @@ function getSelectedDifficulty() {
     return 0;
 }
 
+function setDifficultyDisabled(disabled) {
+    const radios = document.getElementsByName("difficulty");
+    radios.forEach(r => r.disabled = disabled);
+}
+
 function init() {
     for (let r = 0; r < SIZE; r++) {
         board[r] = []
