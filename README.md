@@ -15,7 +15,7 @@ The system is designed with a **frontend-backend architecture** and containerize
 - Heuristic board evaluation based on pattern recognition
 - Web interface using HTML, CSS, and JavaScript
 - REST API built with Flask
-- Containerized deployment using Docker and Docker Compose
+- Containerized deployment using Docker 
 
 ---
 
