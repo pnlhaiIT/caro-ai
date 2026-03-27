@@ -3,6 +3,11 @@ import math
 import random
 
 DIRECTIONS = [(1,0), (0,1), (1,1), (1,-1)]
+DIFFICULTY_DEPTH = {
+    -1: 0,   # dễ 
+     0: 1,   # trung bình 
+     1: 3    # khó 
+}
 
 def get_moves(board):
     moves = set()
@@ -418,10 +423,14 @@ def minimax(board, depth, alpha, beta, maximizing):
                 break
         return min_eval
 
-def best_move(board):
+def best_move(board, difficulty=0):
     win = winning_move(board)
     if win:
         return win
+    # dễ
+    if difficulty == -1:
+        moves = get_moves(board)
+        return random.choice(moves)
 
     block_existing = existing_threat_block(board)
     if block_existing:
@@ -432,20 +441,21 @@ def best_move(board):
         return urgent
 
     moves = get_moves(board)
-
     if len(moves) == 1:
         return moves[0]
+    # Trung bình & khó
+    if difficulty >= 0:
+        moves.sort(key=lambda m: move_score(board, m[0], m[1]), reverse=True)
+        if difficulty == 0:  
+            limit = min(6, max(4, len(moves)))
+        else:  
+            limit = min(10, max(8, len(moves)))
+        moves = moves[:limit]
 
-    moves.sort(key=lambda m: move_score(board, m[0], m[1]), reverse=True)
-
-    limit = 8 if len(moves) > 12 else 10
-    moves = moves[:limit]
-
-    depth = 3  
+    depth = DIFFICULTY_DEPTH.get(difficulty, 2)
 
     best_score = -math.inf
     best = moves[0]
-
     for r, c in moves:
         board[r][c] = "O"
         score = minimax(board, depth, -math.inf, math.inf, False)

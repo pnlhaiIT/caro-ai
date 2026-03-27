@@ -5,6 +5,15 @@ let playerTurn = true
 let gameStarted = false
 const boardDiv = document.getElementById("board")
 const API = window.location.origin
+let gameDifficulty = 0;
+
+function getSelectedDifficulty() {
+    const radios = document.getElementsByName("difficulty");
+    for (let radio of radios) {
+        if (radio.checked) return parseInt(radio.value);
+    }
+    return 0;
+}
 
 function init() {
     for (let r = 0; r < SIZE; r++) {
@@ -56,7 +65,10 @@ async function playerMove(r, c, cell) {
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({ board: board })
+        body: JSON.stringify({
+            board: board,
+            difficulty: gameDifficulty
+        })
     })
 
     const data = await res.json()
@@ -165,7 +177,10 @@ async function aiFirstMove() {
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({ board: board })
+        body: JSON.stringify({
+            board: board,
+            difficulty: gameDifficulty
+        })
     })
     const data = await res.json()
     const aiCell = boardDiv.children[data.row * SIZE + data.col]
@@ -188,7 +203,15 @@ function restartGame() {
 }
 
 function startGame() {
+    const radios = document.getElementsByName("difficulty");
+    for (let radio of radios) {
+        radio.disabled = true;
+    }
+    gameDifficulty = getSelectedDifficulty();
+    console.log("Độ khó đã chọn:", gameDifficulty);
+
     gameStarted = true
+
     document.getElementById("board").innerHTML = ""
     init()
     const first = Math.random() < 0.5

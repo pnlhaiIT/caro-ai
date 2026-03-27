@@ -13,6 +13,12 @@
 
         <h1>CARO-AI 10X10</h1>
 
+        <div id="difficultyPanel">
+            <label><input type="radio" name="difficulty" value="-1"> Dễ</label>
+            <label><input type="radio" name="difficulty" value="0" checked> Trung bình</label>
+            <label><input type="radio" name="difficulty" value="1"> Khó</label>
+        </div>
+
         <div id="players">
             <span>Bạn: </span><span id="playerInfo">X</span>
             <span>AI: </span><span id="aiInfo">O</span>
@@ -31,6 +37,7 @@
 
         <button id="startBtn" onclick="startGame()">🎮 Bắt đầu</button>
     </div>
+
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 

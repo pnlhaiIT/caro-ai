@@ -14,12 +14,13 @@ def home():
 def move():
     data = request.json
     board = data["board"]
+    difficulty = data.get("difficulty", 0) 
 
-    r,c = best_move(board)
+    r, c = best_move(board, difficulty)  
 
     return jsonify({
-        "row" : r,
-        "col" : c 
+        "row": r,
+        "col": c
     })
 
 if __name__ == "__main__":
