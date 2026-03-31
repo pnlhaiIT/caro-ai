@@ -5,7 +5,9 @@ let playerTurn = true
 let gameStarted = false
 const boardDiv = document.getElementById("board")
 const API = window.location.origin
+
 let gameDifficulty = 0;
+let currentWinCells = null
 
 function getSelectedDifficulty() {
     const radios = document.getElementsByName("difficulty");
@@ -21,6 +23,8 @@ function setDifficultyDisabled(disabled) {
 }
 
 function init() {
+    boardDiv.innerHTML = ""
+
     for (let r = 0; r < SIZE; r++) {
         board[r] = []
         for (let c = 0; c < SIZE; c++) {
@@ -29,10 +33,14 @@ function init() {
             const cell = document.createElement("div")
             cell.classList.add("cell")
 
+            cell.dataset.row = r
+            cell.dataset.col = c
+
             cell.onclick = () => playerMove(r, c, cell)
             boardDiv.appendChild(cell)
         }
     }
+    hideWinLine()
 }
 
 async function playerMove(r, c, cell) {
@@ -48,12 +56,14 @@ async function playerMove(r, c, cell) {
     let winCells = checkWin("X")
 
     if (winCells) {
-
         gameOver = true
         drawWinLine(winCells)
 
         setTimeout(() => {
             showModal("🎉 Bạn thắng! 🏆")
+            if (currentWinCells) {
+                setTimeout(() => drawWinLine(currentWinCells), 50)
+            }
         }, 800)
         return
     }
@@ -86,16 +96,19 @@ async function playerMove(r, c, cell) {
     winCells = checkWin("O")
 
     if (winCells) {
-
         gameOver = true
         drawWinLine(winCells)
 
         setTimeout(() => {
             showModal("🎉 AI thắng! 🏆!")
+            if (currentWinCells) {
+                setTimeout(() => drawWinLine(currentWinCells), 50)
+            }
         }, 800)
 
         return
-    } if (checkDraw()) {
+    }
+    if (checkDraw()) {
         gameOver = true
         setTimeout(() => {
             showModal("🤝 Hòa rồi! 😅")
@@ -144,36 +157,49 @@ function checkDraw() {
 }
 
 function drawWinLine(cells) {
+    if (!cells || cells.length < 2) return
+
+    currentWinCells = cells
+
     const boardEl = document.getElementById("board")
+    const winLine = document.getElementById("winLine")
 
     const first = cells[0]
     const last = cells[cells.length - 1]
 
-    const cellSize = 40
+    const firstCell = document.querySelector(`.cell[data-row="${first[0]}"][data-col="${first[1]}"]`)
+    const lastCell = document.querySelector(`.cell[data-row="${last[0]}"][data-col="${last[1]}"]`)
 
-    const x1 = first[1] * cellSize + cellSize / 2
-    const y1 = first[0] * cellSize + cellSize / 2
+    if (!firstCell || !lastCell) return
 
-    const x2 = last[1] * cellSize + cellSize / 2
-    const y2 = last[0] * cellSize + cellSize / 2
+    const boardRect = boardEl.getBoundingClientRect()
+    const firstRect = firstCell.getBoundingClientRect()
+    const lastRect = lastCell.getBoundingClientRect()
 
-    const length = Math.hypot(x2 - x1, y2 - y1)
-    const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI
+    const x1 = firstRect.left - boardRect.left + firstRect.width / 2
+    const y1 = firstRect.top - boardRect.top + firstRect.height / 2
 
-    const line = document.createElement("div")
+    const x2 = lastRect.left - boardRect.left + lastRect.width / 2
+    const y2 = lastRect.top - boardRect.top + lastRect.height / 2
 
-    line.style.position = "absolute"
-    line.style.left = x1 + "px"
-    line.style.top = y1 + "px"
-    line.style.width = length + "px"
-    line.style.height = "6px"
-    line.style.background = "linear-gradient(90deg,#ff4d4d,#ff0000)"
-    line.style.borderRadius = "6px"
-    line.style.boxShadow = "0 0 10px rgba(196, 31, 174, 0.7)"
-    line.style.transform = `rotate(${angle}deg)`
-    line.style.transformOrigin = "0 0"
+    const dx = x2 - x1
+    const dy = y2 - y1
+    const length = Math.sqrt(dx * dx + dy * dy)
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI
 
-    boardEl.appendChild(line)
+    winLine.style.width = `${length}px`
+    winLine.style.left = `${x1}px`
+    winLine.style.top = `${y1 - 3}px`
+    winLine.style.transform = `rotate(${angle}deg)`
+    winLine.style.display = "block"
+}
+
+function hideWinLine() {
+    const winLine = document.getElementById("winLine")
+    if (winLine) {
+        winLine.style.display = "none"
+    }
+    currentWinCells = null
 }
 
 async function aiFirstMove() {
@@ -204,7 +230,23 @@ function showModal(text) {
 }
 
 function restartGame() {
-    location.reload()
+    board = []
+    gameOver = false
+    playerTurn = true
+    gameStarted = false
+    currentWinCells = null
+
+    document.getElementById("winModal").style.display = "none"
+    document.getElementById("turn").innerText = ""
+    document.getElementById("startBtn").style.display = "inline-block"
+
+    const radios = document.getElementsByName("difficulty")
+    for (let radio of radios) {
+        radio.disabled = false
+    }
+
+    document.querySelector('input[name="difficulty"][value="0"]').checked = true
+    init()
 }
 
 function startGame() {
@@ -217,8 +259,8 @@ function startGame() {
 
     gameStarted = true
 
-    document.getElementById("board").innerHTML = ""
     init()
+
     const first = Math.random() < 0.5
     if (first) {
         playerTurn = true
@@ -230,4 +272,13 @@ function startGame() {
     }
     document.getElementById("startBtn").style.display = "none"
 }
+
+window.addEventListener("resize", () => {
+    if (currentWinCells) {
+        setTimeout(() => {
+            drawWinLine(currentWinCells)
+        }, 100)
+    }
+})
+
 init()

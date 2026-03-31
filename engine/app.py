@@ -12,16 +12,20 @@ def home():
 
 @app.route("/move", methods=["POST"])
 def move():
-    data = request.json
-    board = data["board"]
-    difficulty = data.get("difficulty", 0) 
+    try:
+        data = request.json
+        board = data["board"]
+        difficulty = data.get("difficulty", 0) 
 
-    r, c = best_move(board, difficulty)  
+        r, c = best_move(board, difficulty)  
 
-    return jsonify({
-        "row": r,
-        "col": c
-    })
-
+        return jsonify({
+            "row": r,
+            "col": c
+        })
+    except Exception as e:  
+        print("ERROR /move:", e)
+        return jsonify({"error": "Internal server error"}), 500
+    
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5100, debug=False)

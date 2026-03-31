@@ -1,0 +1,11 @@
+version: '3.9'
+
+services:
+  caro-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: caro-engine
+    restart: unless-stopped
+    ports:
+      - "5100:5100"

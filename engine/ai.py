@@ -2,14 +2,59 @@ from board import SIZE, check_win
 import math
 import random
 
-DIRECTIONS = [(1,0), (0,1), (1,1), (1,-1)]
+DIRECTIONS = [(1, 0), (0, 1), (1, 1), (1, -1)]
+
 DIFFICULTY_DEPTH = {
-    -1: 0,   # dễ 
-     0: 1,   # trung bình 
-     1: 3    # khó 
+    -1: 0,   # dễ
+     0: 1,   # trung bình
+     1: 3    # khó
 }
 
-def get_moves(board):
+ATTACK_PATTERNS = [
+    ("OOOO", 10000),
+    ("OOOO.", 10000),
+    (".OOOO", 10000),
+    (".OOO.", 3000),
+    ("OO.OO", 1500),
+    (".OO.O.", 1500),
+    ("OO.O.", 1500),
+    (".O.OO", 1500),
+    (".OO.", 200),
+]
+
+DEFENSE_PATTERNS = [
+    ("XX.XX", 2000),
+    ("X.XX.", 2000),
+    (".XX.X", 2000),
+    ("XXX..", 2000),
+    ("..XXX", 2000),
+]
+
+THREAT_CHECK_PATTERNS = [
+    (".XXX.X.", 5000),
+    (".X.XXX.", 5000),
+    ("XX.XX", 5000),
+    (".XXX.", 2000),
+    ("..XXX.", 2000),
+    (".XXX..", 2000),
+    ("..XXX..", 2000),
+    (".XX.X.", 800),
+    (".X.XX.", 800),
+]
+
+PATTERN_BLOCKS = [
+    (".XXXX.", [0, 5], 100000),
+    ("XXXX.", [4], 90000),
+    (".XXXX", [0], 90000),
+    ("XX.XX", [2], 5000),
+    ("XXX.X", [3], 5000),
+    ("X.XXX", [1], 5000),
+    (".XXX.", [0, 4], 2000),
+    (".XX.X.", [3], 800),
+    (".X.XX.", [2], 800),
+]
+
+def get_moves(board, radius=2):
     moves = set()
     has_piece = False
 
@@ -17,69 +62,66 @@ def get_moves(board):
         for c in range(SIZE):
             if board[r][c] != ".":
                 has_piece = True
-                for dr in range(-2, 3):
-                    for dc in range(-2, 3):
+                for dr in range(-radius, radius + 1):
+                    for dc in range(-radius, radius + 1):
                         nr, nc = r + dr, c + dc
-                        if 0 <= nr < SIZE and 0 <= nc < SIZE:
-                            if board[nr][nc] == ".":
-                                moves.add((nr, nc))
+                        if 0 <= nr < SIZE and 0 <= nc < SIZE and board[nr][nc] == ".":
+                            moves.add((nr, nc))
+
     if not has_piece:
-        return [(random.randint(0, SIZE-1), random.randint(0, SIZE-1))]
+        return [(random.randint(0, SIZE - 1), random.randint(0, SIZE - 1))]
 
     return list(moves)
 
+def get_line(board, r, c, dr, dc):
+    line = []
+    for i in range(-4, 5):
+        nr = r + dr * i
+        nc = c + dc * i
+        if 0 <= nr < SIZE and 0 <= nc < SIZE:
+            line.append(board[nr][nc])
+        else:
+            line.append("#")
+    return "".join(line)
+
 def attack_pattern_score(board, r, c):
     score = 0
-    patterns = [
-        "OOOO", ".OOO.", "OO.OO", ".OO.O.", ".OO.",  
-        "OOOO.", ".OOOO", "OO.O.", ".O.OO"           
-    ]
     for dr, dc in DIRECTIONS:
-        line = get_line(board, r, c, dr, dc, "O")
-        for p in patterns:
-            if p in line:
-                if p in ["OOOO", "OOOO.", ".OOOO"]:
-                    score += 10000
-                elif p == ".OOO.":
-                    score += 3000
-                elif p in ["OO.OO", ".OO.O.", "OO.O.", ".O.OO"]:
-                    score += 1500
-                elif p == ".OO.":
-                    score += 200
+        s = get_line(board, r, c, dr, dc)
+        for p, w in ATTACK_PATTERNS:
+            if p in s:
+                score += w
     return score
 
 def near_win_score(board, r, c):
     score = 0
     for dr, dc in DIRECTIONS:
-        line = get_line(board, r, c, dr, dc, "O")
-        if "OOO." in line or ".OOO" in line:
+        s = get_line(board, r, c, dr, dc)
+        if "OOO." in s or ".OOO" in s:
             score += 5000
-        if "OO." in line or ".OO" in line:
+        if "OO." in s or ".OO" in s:
             score += 500
     return score
 
-
 def defensive_pattern_score(board, r, c):
     score = 0
-    patterns = ["XX.XX", "X.XX.", ".XX.X", "XXX..", "..XXX"]
     for dr, dc in DIRECTIONS:
-        line = get_line(board, r, c, dr, dc, "X")
-        for p in patterns:
-            if p in line:
-                score += 2000
+        s = get_line(board, r, c, dr, dc)
+        for p, w in DEFENSE_PATTERNS:
+            if p in s:
+                score += w
     return score
 
 def move_score(board, r, c):
     score = 0
 
     for dr, dc in DIRECTIONS:
-        s = get_line(board, r, c, dr, dc, "O")
+        s = get_line(board, r, c, dr, dc)
         score += s.count("X") * 3
         score += s.count("O") * 2
 
     score += attack_pattern_score(board, r, c)
     score += near_win_score(board, r, c)
-
     score += defensive_pattern_score(board, r, c)
 
     center = SIZE // 2
@@ -87,24 +129,11 @@ def move_score(board, r, c):
 
     return score
 
-def get_line(board, r, c, dr, dc, player):
-    line = []
-
-    for i in range(-4, 5):
-        nr = r + dr*i
-        nc = c + dc*i
-        if 0 <= nr < SIZE and 0 <= nc < SIZE:
-            line.append(board[nr][nc])
-        else:
-            line.append("#")
-
-    return "".join(line)
-
 def get_lines(board):
     lines = []
 
     for r in range(SIZE):
-        lines.append(board[r])
+        lines.append([board[r][c] for c in range(SIZE)])
 
     for c in range(SIZE):
         lines.append([board[r][c] for r in range(SIZE)])
@@ -157,124 +186,33 @@ def check_threat_at(board, r, c):
     if check_win(board, "X"):
         board[r][c] = "."
         return 100000
-    
+
     score = 0
-
     for dr, dc in DIRECTIONS:
-        s = get_line(board, r, c, dr, dc, "X")
+        s = get_line(board, r, c, dr, dc)
+        for p, w in THREAT_CHECK_PATTERNS:
+            if p in s:
+                score += w
 
-        if ".XXX.X." in s or ".X.XXX." in s or "XX.XX" in s:
-            score += 5000
-
-        if (
-            ".XXX." in s or
-            "..XXX." in s or
-            ".XXX.." in s or
-            "..XXX.." in s
-        ):
-            score += 2000
-
-        if ".XX.X." in s or ".X.XX." in s:
-            score += 800
     board[r][c] = "."
     return score
 
 def get_urgent_moves(board):
-    moves = set()
-    has_piece = False
-
-    for r in range(SIZE):
-        for c in range(SIZE):
-            if board[r][c] != ".":
-                has_piece = True
-                for dr in range(-3, 4):   
-                    for dc in range(-3, 4):
-                        nr, nc = r + dr, c + dc
-                        if 0 <= nr < SIZE and 0 <= nc < SIZE:
-                            if board[nr][nc] == ".":
-                                moves.add((nr, nc))
-    if not has_piece:
-        return [(SIZE // 2, SIZE // 2)]
-
-    return list(moves)
+    return get_moves(board, radius=3)
 
 def collect_pattern_blocks(line, coords):
     s = "".join(line)
     blocks = []
 
-    idx = 0
-    while True:
-        idx = s.find(".XXXX.", idx)
-        if idx == -1:
-            break
-        blocks.append((coords[idx], 100000))
-        blocks.append((coords[idx + 5], 100000))
-        idx += 1
-
-    idx = 0
-    while True:
-        idx = s.find("XXXX.", idx)
-        if idx == -1:
-            break
-        blocks.append((coords[idx + 4], 90000))
-        idx += 1
-
-    idx = 0
-    while True:
-        idx = s.find(".XXXX", idx)
-        if idx == -1:
-            break
-        blocks.append((coords[idx], 90000))
-        idx += 1
-
-    idx = 0
-    while True:
-        idx = s.find("XX.XX", idx)
-        if idx == -1:
-            break
-        blocks.append((coords[idx + 2], 5000))
-        idx += 1
-
-    idx = 0
-    while True:
-        idx = s.find("XXX.X", idx)
-        if idx == -1:
-            break
-        blocks.append((coords[idx + 3], 5000))
-        idx += 1
-
-    idx = 0
-    while True:
-        idx = s.find("X.XXX", idx)
-        if idx == -1:
-            break
-        blocks.append((coords[idx + 1], 5000))
-        idx += 1
-
-    idx = 0
-    while True:
-        idx = s.find(".XXX.", idx)
-        if idx == -1:
-            break
-        blocks.append((coords[idx], 2000))
-        blocks.append((coords[idx + 4], 2000))
-        idx += 1
-
-    idx = 0
-    while True:
-        idx = s.find(".XX.X.", idx)
-        if idx == -1:
-            break
-        blocks.append((coords[idx + 3], 800))
-        idx += 1
-
-    idx = 0
-    while True:
-        idx = s.find(".X.XX.", idx)
-        if idx == -1:
-            break
-        blocks.append((coords[idx + 2], 800))
-        idx += 1
+    for pattern, indexes, weight in PATTERN_BLOCKS:
+        idx = 0
+        while True:
+            idx = s.find(pattern, idx)
+            if idx == -1:
+                break
+            for offset in indexes:
+                blocks.append((coords[idx + offset], weight))
+            idx += 1
 
     return blocks
 
@@ -347,24 +285,19 @@ def existing_threat_block(board):
     return max(candidate_scores, key=candidate_scores.get)
 
 def winning_move(board):
-    moves = get_moves(board)
-
-    for r, c in moves:
+    for r, c in get_moves(board):
         board[r][c] = "O"
         if check_win(board, "O"):
             board[r][c] = "."
             return (r, c)
         board[r][c] = "."
-
     return None
 
 def urgent_move(board):
-    moves = get_urgent_moves(board)
-
-    best_move = None
+    best = None
     best_score = 0
 
-    for r, c in moves:
+    for r, c in get_urgent_moves(board):
         score = check_threat_at(board, r, c)
 
         if score >= 100000:
@@ -372,9 +305,53 @@ def urgent_move(board):
 
         if score > best_score:
             best_score = score
-            best_move = (r, c)
+            best = (r, c)
 
-    return best_move if best_score > 0 else None
+    return best if best_score > 0 else None
+
+def count_threat_types_after_move(board, r, c, player):
+    board[r][c] = player
+    open4 = 0
+    close4 = 0
+
+    if player == "O":
+        open_pattern = ".OOOO."
+        close_patterns = ["OOOO.", ".OOOO", "OOO.O", "OO.OO", "O.OOO"]
+    else:
+        open_pattern = ".XXXX."
+        close_patterns = ["XXXX.", ".XXXX", "XXX.X", "XX.XX", "X.XXX"]
+
+    for dr, dc in DIRECTIONS:
+        s = get_line(board, r, c, dr, dc)
+
+        if open_pattern in s:
+            open4 += 1
+
+        for p in close_patterns:
+            if p in s:
+                close4 += 1
+                break
+
+    board[r][c] = "."
+    return open4, close4
+
+def find_open4_creator(board, player):
+    best = None
+    best_score = -1
+
+    for r, c in get_moves(board):
+        if board[r][c] != ".":
+            continue
+
+        open4, close4 = count_threat_types_after_move(board, r, c, player)
+
+        if open4 > 0:
+            score = open4 * 100 + close4
+            if score > best_score:
+                best_score = score
+                best = (r, c)
+
+    return best
 
 def evaluate(board):
     score = 0
@@ -398,13 +375,13 @@ def minimax(board, depth, alpha, beta, maximizing):
 
     moves = get_moves(board)
     moves.sort(key=lambda m: move_score(board, m[0], m[1]), reverse=True)
-    moves = moves[:10]  
+    moves = moves[:10]
 
     if maximizing:
         max_eval = -math.inf
         for r, c in moves:
             board[r][c] = "O"
-            val = minimax(board, depth-1, alpha, beta, False)
+            val = minimax(board, depth - 1, alpha, beta, False)
             board[r][c] = "."
             max_eval = max(max_eval, val)
             alpha = max(alpha, val)
@@ -415,7 +392,7 @@ def minimax(board, depth, alpha, beta, maximizing):
         min_eval = math.inf
         for r, c in moves:
             board[r][c] = "X"
-            val = minimax(board, depth-1, alpha, beta, True)
+            val = minimax(board, depth - 1, alpha, beta, True)
             board[r][c] = "."
             min_eval = min(min_eval, val)
             beta = min(beta, val)
@@ -427,10 +404,9 @@ def best_move(board, difficulty=0):
     win = winning_move(board)
     if win:
         return win
-    # dễ
+
     if difficulty == -1:
-        moves = get_moves(board)
-        return random.choice(moves)
+        return random.choice(get_moves(board))
 
     block_existing = existing_threat_block(board)
     if block_existing:
@@ -440,15 +416,24 @@ def best_move(board, difficulty=0):
     if urgent:
         return urgent
 
+    if difficulty == 1:
+        opp_open4 = find_open4_creator(board, "X")
+        opp_has_close4 = block_existing is not None
+
+        if not opp_open4 and not opp_has_close4:
+            ai_open4 = find_open4_creator(board, "O")
+            if ai_open4:
+                return ai_open4
+
     moves = get_moves(board)
     if len(moves) == 1:
         return moves[0]
-    # Trung bình & khó
+
     if difficulty >= 0:
         moves.sort(key=lambda m: move_score(board, m[0], m[1]), reverse=True)
-        if difficulty == 0:  
+        if difficulty == 0:
             limit = min(6, max(4, len(moves)))
-        else:  
+        else:
             limit = min(10, max(8, len(moves)))
         moves = moves[:limit]
 
@@ -456,6 +441,7 @@ def best_move(board, difficulty=0):
 
     best_score = -math.inf
     best = moves[0]
+
     for r, c in moves:
         board[r][c] = "O"
         score = minimax(board, depth, -math.inf, math.inf, False)
