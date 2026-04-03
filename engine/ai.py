@@ -10,26 +10,6 @@ DIFFICULTY_DEPTH = {
      1: 3    # khó
 }
 
-ATTACK_PATTERNS = [
-    ("OOOO", 10000),
-    ("OOOO.", 10000),
-    (".OOOO", 10000),
-    (".OOO.", 3000),
-    ("OO.OO", 1500),
-    (".OO.O.", 1500),
-    ("OO.O.", 1500),
-    (".O.OO", 1500),
-    (".OO.", 200),
-]
-
-DEFENSE_PATTERNS = [
-    ("XX.XX", 2000),
-    ("X.XX.", 2000),
-    (".XX.X", 2000),
-    ("XXX..", 2000),
-    ("..XXX", 2000),
-]
-
 THREAT_CHECK_PATTERNS = [
     (".XXX.X.", 5000),
     (".X.XXX.", 5000),
@@ -54,6 +34,58 @@ PATTERN_BLOCKS = [
     (".X.XX.", [2], 800),
 ]
 
+EVAL_PATTERNS_O = [
+    (".OOOO.", 100000),
+    ("OOOO.", 25000),
+    (".OOOO", 25000),
+    ("OOO.O", 18000),
+    ("OO.OO", 18000),
+    ("O.OOO", 18000),
+
+    (".OOO.", 5000),
+    ("OOO..", 1500),
+    ("..OOO", 1500),
+    (".OOO#", 1000),
+    ("#OOO.", 1000),
+
+    (".OO.O.", 3000),
+    (".O.OO.", 3000),
+    ("OO.O.", 2200),
+    (".O.OO", 2200),
+    ("O.OO.", 2200),
+    (".OO.O", 2200),
+
+    (".OO.", 300),
+    (".O.O.", 180),
+]
+
+EVAL_PATTERNS_X = [
+    (".XXXX.", 120000),
+    ("XXXX.", 30000),
+    (".XXXX", 30000),
+    ("XXX.X", 22000),
+    ("XX.XX", 22000),
+    ("X.XXX", 22000),
+
+    (".XXX.", 7000),
+    ("XXX..", 1800),
+    ("..XXX", 1800),
+    (".XXX#", 1200),
+    ("#XXX.", 1200),
+
+    (".XX.X.", 3500),
+    (".X.XX.", 3500),
+    ("XX.X.", 2500),
+    (".X.XX", 2500),
+    ("X.XX.", 2500),
+    (".XX.X", 2500),
+
+    (".XX.", 350),
+    (".X.X.", 220),
+]
+
+TRANSPOSITION_TABLE = {}
+
 def get_moves(board, radius=2):
     moves = set()
     has_piece = False
@@ -69,9 +101,13 @@ def get_moves(board, radius=2):
                             moves.add((nr, nc))
 
     if not has_piece:
-        return [(random.randint(0, SIZE - 1), random.randint(0, SIZE - 1))]
+        center = SIZE // 2
+        return [(center, center)]
 
     return list(moves)
+
+def get_urgent_moves(board):
+    return get_moves(board, radius=3)
 
 def get_line(board, r, c, dr, dc):
     line = []
@@ -83,51 +119,6 @@ def get_line(board, r, c, dr, dc):
         else:
             line.append("#")
     return "".join(line)
-
-def attack_pattern_score(board, r, c):
-    score = 0
-    for dr, dc in DIRECTIONS:
-        s = get_line(board, r, c, dr, dc)
-        for p, w in ATTACK_PATTERNS:
-            if p in s:
-                score += w
-    return score
-
-def near_win_score(board, r, c):
-    score = 0
-    for dr, dc in DIRECTIONS:
-        s = get_line(board, r, c, dr, dc)
-        if "OOO." in s or ".OOO" in s:
-            score += 5000
-        if "OO." in s or ".OO" in s:
-            score += 500
-    return score
-
-def defensive_pattern_score(board, r, c):
-    score = 0
-    for dr, dc in DIRECTIONS:
-        s = get_line(board, r, c, dr, dc)
-        for p, w in DEFENSE_PATTERNS:
-            if p in s:
-                score += w
-    return score
-
-def move_score(board, r, c):
-    score = 0
-
-    for dr, dc in DIRECTIONS:
-        s = get_line(board, r, c, dr, dc)
-        score += s.count("X") * 3
-        score += s.count("O") * 2
-
-    score += attack_pattern_score(board, r, c)
-    score += near_win_score(board, r, c)
-    score += defensive_pattern_score(board, r, c)
-
-    center = SIZE // 2
-    score -= abs(r - center) + abs(c - center)
-
-    return score
 
 def get_lines(board):
     lines = []
@@ -180,6 +171,71 @@ def get_lines(board):
 
     return lines
 
+def board_key(board, depth, maximizing):
+    return ("".join("".join(row) for row in board), depth, maximizing)
+
+def evaluate_line_string(s):
+    score = 0
+
+    for pattern, value in EVAL_PATTERNS_O:
+        score += s.count(pattern) * value
+
+    for pattern, value in EVAL_PATTERNS_X:
+        score -= s.count(pattern) * value
+
+    return score
+
+def count_threat_types_after_move(board, r, c, player):
+    board[r][c] = player
+    open4 = 0
+    close4 = 0
+    open3 = 0
+
+    if player == "O":
+        open4_patterns = [".OOOO."]
+        close4_patterns = ["OOOO.", ".OOOO", "OOO.O", "OO.OO", "O.OOO"]
+        open3_patterns = [".OOO.", ".OO.O.", ".O.OO."]
+    else:
+        open4_patterns = [".XXXX."]
+        close4_patterns = ["XXXX.", ".XXXX", "XXX.X", "XX.XX", "X.XXX"]
+        open3_patterns = [".XXX.", ".XX.X.", ".X.XX."]
+
+    for dr, dc in DIRECTIONS:
+        s = get_line(board, r, c, dr, dc)
+
+        for p in open4_patterns:
+            if p in s:
+                open4 += 1
+
+        for p in close4_patterns:
+            if p in s:
+                close4 += 1
+                break
+
+        for p in open3_patterns:
+            if p in s:
+                open3 += 1
+                break
+
+    board[r][c] = "."
+    return open4, close4, open3
+
+def local_pattern_score(board, r, c, player):
+    score = 0
+
+    if player == "O":
+        patterns = EVAL_PATTERNS_O
+    else:
+        patterns = EVAL_PATTERNS_X
+
+    for dr, dc in DIRECTIONS:
+        s = get_line(board, r, c, dr, dc)
+        s = "#" + s + "#"
+        for p, w in patterns:
+            score += s.count(p) * w
+
+    return score
+
 def check_threat_at(board, r, c):
     board[r][c] = "X"
 
@@ -196,9 +252,6 @@ def check_threat_at(board, r, c):
 
     board[r][c] = "."
     return score
-
-def get_urgent_moves(board):
-    return get_moves(board, radius=3)
 
 def collect_pattern_blocks(line, coords):
     s = "".join(line)
@@ -309,32 +362,6 @@ def urgent_move(board):
 
     return best if best_score > 0 else None
 
-def count_threat_types_after_move(board, r, c, player):
-    board[r][c] = player
-    open4 = 0
-    close4 = 0
-
-    if player == "O":
-        open_pattern = ".OOOO."
-        close_patterns = ["OOOO.", ".OOOO", "OOO.O", "OO.OO", "O.OOO"]
-    else:
-        open_pattern = ".XXXX."
-        close_patterns = ["XXXX.", ".XXXX", "XXX.X", "XX.XX", "X.XXX"]
-
-    for dr, dc in DIRECTIONS:
-        s = get_line(board, r, c, dr, dc)
-
-        if open_pattern in s:
-            open4 += 1
-
-        for p in close_patterns:
-            if p in s:
-                close4 += 1
-                break
-
-    board[r][c] = "."
-    return open4, close4
-
 def find_open4_creator(board, player):
     best = None
     best_score = -1
@@ -343,35 +370,59 @@ def find_open4_creator(board, player):
         if board[r][c] != ".":
             continue
 
-        open4, close4 = count_threat_types_after_move(board, r, c, player)
+        open4, close4, open3 = count_threat_types_after_move(board, r, c, player)
 
         if open4 > 0:
-            score = open4 * 100 + close4
+            score = open4 * 100 + close4 * 10 + open3
             if score > best_score:
                 best_score = score
                 best = (r, c)
 
     return best
 
+def move_score(board, r, c):
+    if board[r][c] != ".":
+        return -10**9
+
+    center = SIZE // 2
+    center_bonus = -(abs(r - center) + abs(c - center))
+
+    board[r][c] = "O"
+    attack = local_pattern_score(board, r, c, "O")
+    o_open4, o_close4, o_open3 = count_threat_types_after_move(board, r, c, "O")
+    attack += o_open4 * 50000 + o_close4 * 12000 + o_open3 * 3000
+    board[r][c] = "."
+
+    board[r][c] = "X"
+    defense = local_pattern_score(board, r, c, "X")
+    x_open4, x_close4, x_open3 = count_threat_types_after_move(board, r, c, "X")
+    defense += x_open4 * 60000 + x_close4 * 15000 + x_open3 * 3500
+    board[r][c] = "."
+
+    return attack + defense * 1.15 + center_bonus
+
 def evaluate(board):
     score = 0
 
     for line in get_lines(board):
-        s = "".join(line)
-        score += s.count("OOOO") * 10000
-        score += s.count("OOO") * 1000
-        score -= s.count("XXXX") * 20000
-        score -= s.count("XXX") * 2000
+        s = "#" + "".join(line) + "#"
+        score += evaluate_line_string(s)
 
     return score
 
 def minimax(board, depth, alpha, beta, maximizing):
+    key = board_key(board, depth, maximizing)
+    if key in TRANSPOSITION_TABLE:
+        return TRANSPOSITION_TABLE[key]
+
     if check_win(board, "O"):
         return 1000000
     if check_win(board, "X"):
         return -1000000
     if depth == 0:
-        return evaluate(board)
+        val = evaluate(board)
+        TRANSPOSITION_TABLE[key] = val
+        return val
 
     moves = get_moves(board)
     moves.sort(key=lambda m: move_score(board, m[0], m[1]), reverse=True)
@@ -387,6 +438,7 @@ def minimax(board, depth, alpha, beta, maximizing):
             alpha = max(alpha, val)
             if alpha >= beta:
                 break
+        TRANSPOSITION_TABLE[key] = max_eval
         return max_eval
     else:
         min_eval = math.inf
@@ -398,15 +450,19 @@ def minimax(board, depth, alpha, beta, maximizing):
             beta = min(beta, val)
             if alpha >= beta:
                 break
+        TRANSPOSITION_TABLE[key] = min_eval
         return min_eval
 
 def best_move(board, difficulty=0):
+    TRANSPOSITION_TABLE.clear()
+
     win = winning_move(board)
     if win:
         return win
 
     if difficulty == -1:
-        return random.choice(get_moves(board))
+        moves = get_moves(board)
+        return random.choice(moves) if moves else None
 
     block_existing = existing_threat_block(board)
     if block_existing:
@@ -426,16 +482,17 @@ def best_move(board, difficulty=0):
                 return ai_open4
 
     moves = get_moves(board)
+    if not moves:
+        return None
     if len(moves) == 1:
         return moves[0]
 
-    if difficulty >= 0:
-        moves.sort(key=lambda m: move_score(board, m[0], m[1]), reverse=True)
-        if difficulty == 0:
-            limit = min(6, max(4, len(moves)))
-        else:
-            limit = min(10, max(8, len(moves)))
-        moves = moves[:limit]
+    moves.sort(key=lambda m: move_score(board, m[0], m[1]), reverse=True)
+
+    if difficulty == 0:
+        moves = moves[:6]
+    else:
+        moves = moves[:10]
 
     depth = DIFFICULTY_DEPTH.get(difficulty, 2)
 
@@ -446,6 +503,7 @@ def best_move(board, difficulty=0):
         board[r][c] = "O"
         score = minimax(board, depth, -math.inf, math.inf, False)
         board[r][c] = "."
+
         if score > best_score:
             best_score = score
             best = (r, c)
