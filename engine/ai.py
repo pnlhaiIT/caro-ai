@@ -236,7 +236,7 @@ def local_pattern_score(board, r, c, player):
 
     return score
 
-def check_threat_at(board, r, c):
+def check_threat(board, r, c):
     board[r][c] = "X"
 
     if check_win(board, "X"):
@@ -267,7 +267,7 @@ def collect_pattern_blocks(line, coords):
                 blocks.append((coords[idx + offset], weight))
             idx += 1
 
-    return blocks
+    return blocks 
 
 def existing_threat_block(board):
     candidate_scores = {}
@@ -337,10 +337,10 @@ def existing_threat_block(board):
 
     return max(candidate_scores, key=candidate_scores.get)
 
-def winning_move(board):
+def winning_move(board, player):
     for r, c in get_moves(board):
-        board[r][c] = "O"
-        if check_win(board, "O"):
+        board[r][c] = player
+        if check_win(board, player):
             board[r][c] = "."
             return (r, c)
         board[r][c] = "."
@@ -351,7 +351,7 @@ def urgent_move(board):
     best_score = 0
 
     for r, c in get_urgent_moves(board):
-        score = check_threat_at(board, r, c)
+        score = check_threat(board, r, c)
 
         if score >= 100000:
             return (r, c)
@@ -460,14 +460,26 @@ def best_move(board, difficulty=0):
     if win:
         return win
 
+    opp_win = winning_move(board, "X")
+    if opp_win:
+        return opp_win
+
     if difficulty == -1:
         moves = get_moves(board)
         return random.choice(moves) if moves else None
 
+    #ưu tiên tạo open4 trước
+    ai_open4 = find_open4_creator(board, "O")
+    opp_open4 = find_open4_creator(board, "X")
+    if ai_open4 and not opp_open4:
+        return ai_open4
+
+    #block đối thủ
     block_existing = existing_threat_block(board)
     if block_existing:
         return block_existing
 
+    #xét urgent
     urgent = urgent_move(board)
     if urgent:
         return urgent
