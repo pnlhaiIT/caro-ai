@@ -90,7 +90,7 @@ Return best move
 
 ```bash
 git clone https://github.com/pnlhaiIT/caro-ai.git
-cd engine
+cd caro-ai/engine
 pip install -r requirements.txt
 python app.py
 ```
