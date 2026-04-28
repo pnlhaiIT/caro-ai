@@ -3,8 +3,6 @@
 A web-based Gomoku (Caro) game where a player competes against an AI opponent.  
 The AI is implemented using the **Minimax algorithm with Alpha-Beta Pruning** and heuristic board evaluation.
 
-The system is designed with a **frontend-backend architecture** and containerized using **Docker**.
-
 ---
 
 # Features
@@ -23,21 +21,24 @@ The system is designed with a **frontend-backend architecture** and containerize
 ```
 CARO-AI
 │
-├── engine                 
-│   ├── ai.py               # Core AI engine (minimax, alpha-beta pruning, evaluation)
-│   ├── board.py            # Board representation and game rules (check_win, SIZE)
-│   ├── app.py              # Flask API server handling player moves and AI responses
+├── engine/
+│   ├── ai.py               # Core AI engine 
+│   ├── config_para.json    # Parameters 
+│   ├── board.py            # Board representation and game rules 
+│   ├── app.py              # Flask API server for moves
 │   ├── requirements.txt    # Dependencies
-│   ├── templates/          
-│   │   └── index.html      # Main UI layout of the game
-│   └── static/             
-│       ├── script.js       # Frontend game logic and API communication
-│       └── style.css       # Game interface styling
+│   ├── templates/
+│   │   └── index.html      # Main game page
+│   └── static/
+│       ├── script.js       # Frontend game logic and API calls
+│       └── style.css       # UI styling
 │
-├── Dockerfile              # Container configuration (builds engine/)   
+├── Dockerfile              # Container
+├── docker-compose.yaml     # Orchestration
 ├── .gitignore              # Files ignored by Git
 └── README.md               # Project documentation
 ```
+
 ---
 
 # AI Core Flow
@@ -74,6 +75,7 @@ Evaluate board states
      ▼
 Return best move
 ```
+
 ---
 
 # Technologies Used
