@@ -1,92 +1,35 @@
 from board import SIZE, check_win
+import json
 import math
+from pathlib import Path
 import random
 
-DIRECTIONS = [(1, 0), (0, 1), (1, 1), (1, -1)]
+CONFIG_PATH = Path(__file__).with_name("config_para.json")
+with CONFIG_PATH.open("r", encoding="utf-8") as f:
+    CFG = json.load(f)
 
-DIFFICULTY_DEPTH = {
-    -1: 0,   # dễ
-     0: 1,   # trung bình
-     1: 3    # khó
-}
-
-THREAT_CHECK_PATTERNS = [
-    (".XXX.X.", 5000),
-    (".X.XXX.", 5000),
-    ("XX.XX", 5000),
-    (".XXX.", 2000),
-    ("..XXX.", 2000),
-    (".XXX..", 2000),
-    ("..XXX..", 2000),
-    (".XX.X.", 800),
-    (".X.XX.", 800),
-]
-
-PATTERN_BLOCKS = [
-    (".XXXX.", [0, 5], 100000),
-    ("XXXX.", [4], 90000),
-    (".XXXX", [0], 90000),
-    ("XX.XX", [2], 5000),
-    ("XXX.X", [3], 5000),
-    ("X.XXX", [1], 5000),
-    (".XXX.", [0, 4], 2000),
-    (".XX.X.", [3], 800),
-    (".X.XX.", [2], 800),
-]
-
-EVAL_PATTERNS_O = [
-    (".OOOO.", 100000),
-    ("OOOO.", 25000),
-    (".OOOO", 25000),
-    ("OOO.O", 18000),
-    ("OO.OO", 18000),
-    ("O.OOO", 18000),
-
-    (".OOO.", 5000),
-    ("OOO..", 1500),
-    ("..OOO", 1500),
-    (".OOO#", 1000),
-    ("#OOO.", 1000),
-
-    (".OO.O.", 3000),
-    (".O.OO.", 3000),
-    ("OO.O.", 2200),
-    (".O.OO", 2200),
-    ("O.OO.", 2200),
-    (".OO.O", 2200),
-
-    (".OO.", 300),
-    (".O.O.", 180),
-]
-
-EVAL_PATTERNS_X = [
-    (".XXXX.", 120000),
-    ("XXXX.", 30000),
-    (".XXXX", 30000),
-    ("XXX.X", 22000),
-    ("XX.XX", 22000),
-    ("X.XXX", 22000),
-
-    (".XXX.", 7000),
-    ("XXX..", 1800),
-    ("..XXX", 1800),
-    (".XXX#", 1200),
-    ("#XXX.", 1200),
-
-    (".XX.X.", 3500),
-    (".X.XX.", 3500),
-    ("XX.X.", 2500),
-    (".X.XX", 2500),
-    ("X.XX.", 2500),
-    (".XX.X", 2500),
-
-    (".XX.", 350),
-    (".X.X.", 220),
-]
+DIRECTIONS = [tuple(direction) for direction in CFG["DIRECTIONS"]]
+DIFFICULTY_DEPTH = {int(k): v for k, v in CFG["DIFFICULTY_DEPTH"].items()}
+THREAT_CHECK_PATTERNS = [(p, w) for p, w in CFG["THREAT_CHECK_PATTERNS"]]
+PATTERN_BLOCKS = [(p, idxs, w) for p, idxs, w in CFG["PATTERN_BLOCKS"]]
+EVAL_PATTERNS_O = [(p, w) for p, w in CFG["EVAL_PATTERNS_O"]]
+EVAL_PATTERNS_X = [(p, w) for p, w in CFG["EVAL_PATTERNS_X"]]
 
 TRANSPOSITION_TABLE = {}
+MOVE_SCORE_CACHE = {}
+MOVE_GEN_CACHE = {}
+
+
+def bstate(board):
+    return "".join("".join(row) for row in board)
 
 def get_moves(board, radius=2):
+    state = bstate(board)
+    cache_key = (state, radius)
+    cached_moves = MOVE_GEN_CACHE.get(cache_key)
+    if cached_moves is not None:
+        return list(cached_moves)
+
     moves = set()
     has_piece = False
 
@@ -102,11 +45,15 @@ def get_moves(board, radius=2):
 
     if not has_piece:
         center = SIZE // 2
-        return [(center, center)]
+        generated_moves = [(center, center)]
+        MOVE_GEN_CACHE[cache_key] = tuple(generated_moves)
+        return generated_moves
 
-    return list(moves)
+    generated_moves = list(moves)
+    MOVE_GEN_CACHE[cache_key] = tuple(generated_moves)
+    return generated_moves
 
-def get_urgent_moves(board):
+def urgent_moves(board):
     return get_moves(board, radius=3)
 
 def get_line(board, r, c, dr, dc):
@@ -172,9 +119,9 @@ def get_lines(board):
     return lines
 
 def board_key(board, depth, maximizing):
-    return ("".join("".join(row) for row in board), depth, maximizing)
+    return (bstate(board), depth, maximizing)
 
-def evaluate_line_string(s):
+def eval_line(s):
     score = 0
 
     for pattern, value in EVAL_PATTERNS_O:
@@ -185,7 +132,7 @@ def evaluate_line_string(s):
 
     return score
 
-def count_threat_types_after_move(board, r, c, player):
+def count_threats(board, r, c, player):
     board[r][c] = player
     open4 = 0
     close4 = 0
@@ -220,7 +167,7 @@ def count_threat_types_after_move(board, r, c, player):
     board[r][c] = "."
     return open4, close4, open3
 
-def local_pattern_score(board, r, c, player):
+def local_score(board, r, c, player):
     score = 0
 
     if player == "O":
@@ -253,7 +200,7 @@ def check_threat(board, r, c):
     board[r][c] = "."
     return score
 
-def collect_pattern_blocks(line, coords):
+def collect_blocks(line, coords):
     s = "".join(line)
     blocks = []
 
@@ -269,11 +216,11 @@ def collect_pattern_blocks(line, coords):
 
     return blocks 
 
-def existing_threat_block(board):
+def threat_block(board):
     candidate_scores = {}
 
     def add_blocks_from_line(line, coords):
-        for pos, w in collect_pattern_blocks(line, coords):
+        for pos, w in collect_blocks(line, coords):
             r, c = pos
             if board[r][c] == ".":
                 candidate_scores[(r, c)] = candidate_scores.get((r, c), 0) + w
@@ -337,7 +284,7 @@ def existing_threat_block(board):
 
     return max(candidate_scores, key=candidate_scores.get)
 
-def winning_move(board, player):
+def win_move(board, player):
     for r, c in get_moves(board):
         board[r][c] = player
         if check_win(board, player):
@@ -350,7 +297,7 @@ def urgent_move(board):
     best = None
     best_score = 0
 
-    for r, c in get_urgent_moves(board):
+    for r, c in urgent_moves(board):
         score = check_threat(board, r, c)
 
         if score >= 100000:
@@ -362,7 +309,7 @@ def urgent_move(board):
 
     return best if best_score > 0 else None
 
-def find_open4_creator(board, player):
+def find_open4(board, player):
     best = None
     best_score = -1
 
@@ -370,7 +317,7 @@ def find_open4_creator(board, player):
         if board[r][c] != ".":
             continue
 
-        open4, close4, open3 = count_threat_types_after_move(board, r, c, player)
+        open4, close4, open3 = count_threats(board, r, c, player)
 
         if open4 > 0:
             score = open4 * 100 + close4 * 10 + open3
@@ -381,32 +328,66 @@ def find_open4_creator(board, player):
     return best
 
 def move_score(board, r, c):
+    state = bstate(board)
+    cache_key = (state, r, c)
+    cached_score = MOVE_SCORE_CACHE.get(cache_key)
+    if cached_score is not None:
+        return cached_score
+
     if board[r][c] != ".":
         return -10**9
 
     center = SIZE // 2
     center_bonus = -(abs(r - center) + abs(c - center))
+    move_count = state.count("X") + state.count("O")
 
     board[r][c] = "O"
-    attack = local_pattern_score(board, r, c, "O")
-    o_open4, o_close4, o_open3 = count_threat_types_after_move(board, r, c, "O")
+    attack = local_score(board, r, c, "O")
+    o_open4, o_close4, o_open3 = count_threats(board, r, c, "O")
     attack += o_open4 * 50000 + o_close4 * 12000 + o_open3 * 3000
+    if o_open3 >= 2:
+        attack += 50000
     board[r][c] = "."
 
     board[r][c] = "X"
-    defense = local_pattern_score(board, r, c, "X")
-    x_open4, x_close4, x_open3 = count_threat_types_after_move(board, r, c, "X")
+    defense = local_score(board, r, c, "X")
+    x_open4, x_close4, x_open3 = count_threats(board, r, c, "X")
     defense += x_open4 * 60000 + x_close4 * 15000 + x_open3 * 3500
+    if x_open3 >= 2:
+        defense += 60000
     board[r][c] = "."
 
-    return attack + defense * 1.15 + center_bonus
+    if move_count < 8:
+        defense_weight = 0.75
+    elif move_count < 14:
+        defense_weight = 0.95
+    else:
+        defense_weight = 1.15
+
+    score = attack + defense * defense_weight + center_bonus
+    MOVE_SCORE_CACHE[cache_key] = score
+    return score
+
+
+def sort_moves(board, moves):
+    state = bstate(board)
+
+    def score_for(move):
+        r, c = move
+        cache_key = (state, r, c)
+        cached_score = MOVE_SCORE_CACHE.get(cache_key)
+        if cached_score is not None:
+            return cached_score
+        return move_score(board, r, c)
+
+    moves.sort(key=score_for, reverse=True)
 
 def evaluate(board):
     score = 0
 
     for line in get_lines(board):
         s = "#" + "".join(line) + "#"
-        score += evaluate_line_string(s)
+        score += eval_line(s)
 
     return score
 
@@ -425,7 +406,7 @@ def minimax(board, depth, alpha, beta, maximizing):
         return val
 
     moves = get_moves(board)
-    moves.sort(key=lambda m: move_score(board, m[0], m[1]), reverse=True)
+    sort_moves(board, moves)
     moves = moves[:10]
 
     if maximizing:
@@ -455,12 +436,14 @@ def minimax(board, depth, alpha, beta, maximizing):
 
 def best_move(board, difficulty=0):
     TRANSPOSITION_TABLE.clear()
+    MOVE_SCORE_CACHE.clear()
+    MOVE_GEN_CACHE.clear()
 
-    win = winning_move(board)
+    win = win_move(board, "O")
     if win:
         return win
 
-    opp_win = winning_move(board, "X")
+    opp_win = win_move(board, "X")
     if opp_win:
         return opp_win
 
@@ -468,28 +451,37 @@ def best_move(board, difficulty=0):
         moves = get_moves(board)
         return random.choice(moves) if moves else None
 
+    move_count = sum(row.count("X") + row.count("O") for row in board)
+
     #ưu tiên tạo open4 trước
-    ai_open4 = find_open4_creator(board, "O")
-    opp_open4 = find_open4_creator(board, "X")
+    ai_open4 = find_open4(board, "O")
+    opp_open4 = find_open4(board, "X")
     if ai_open4 and not opp_open4:
         return ai_open4
 
     #block đối thủ
-    block_existing = existing_threat_block(board)
+    block_existing = threat_block(board)
     if block_existing:
-        return block_existing
+        urgent_block_score = check_threat(board, block_existing[0], block_existing[1])
+        should_force_block = move_count >= 10 or urgent_block_score >= 5000
+        if should_force_block:
+            return block_existing
 
     #xét urgent
     urgent = urgent_move(board)
     if urgent:
         return urgent
 
+    # nếu đang rất sớm, ưu tiên phát triển thế tấn công hơn block pattern nhẹ
+    if block_existing and move_count >= 6:
+        return block_existing
+
     if difficulty == 1:
-        opp_open4 = find_open4_creator(board, "X")
+        opp_open4 = find_open4(board, "X")
         opp_has_close4 = block_existing is not None
 
         if not opp_open4 and not opp_has_close4:
-            ai_open4 = find_open4_creator(board, "O")
+            ai_open4 = find_open4(board, "O")
             if ai_open4:
                 return ai_open4
 
@@ -499,14 +491,19 @@ def best_move(board, difficulty=0):
     if len(moves) == 1:
         return moves[0]
 
-    moves.sort(key=lambda m: move_score(board, m[0], m[1]), reverse=True)
+    sort_moves(board, moves)
 
     if difficulty == 0:
-        moves = moves[:6]
+        moves = moves[:4]
     else:
-        moves = moves[:10]
+        moves = moves[:6]
 
-    depth = DIFFICULTY_DEPTH.get(difficulty, 2)
+    if move_count < 10:
+        depth = 1
+    elif move_count < 20:
+        depth = 2
+    else:
+        depth = 3
 
     best_score = -math.inf
     best = moves[0]
