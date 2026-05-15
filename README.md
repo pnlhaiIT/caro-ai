@@ -93,7 +93,7 @@ Return best move
 # Quick Start
 
 ```bash
-git clone https://github.com/pnlhaiIT/caro-ai.git
+git clone 'url'
 cd caro-ai
 
 # Option 1 — Run with Docker (recommended)
@@ -106,9 +106,17 @@ chmod +x create-container.sh
 chmod +x run-app.sh
 ./run-app.sh 
 ```
+WINDOWS:
+```bash
+git clone 'url'
+cd caro-ai
+python -m venv .venv
+.venv/Script/activate
+pip install -r engine/requirements.txt
+python engine/app.py
+```
 
-Then open:
-
+###Then open:
 ```text
 http://localhost:5100
 ```
