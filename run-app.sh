@@ -4,7 +4,7 @@ set -e
 
 # venv hoặc .venv
 if  [ -d ".venv" ] || [ -d "venv" ]; then
-    echo "venv exists"
+    echo "virtual env existed"
 else
     python3 -m venv .venv 
     source .venv/bin/activate 
