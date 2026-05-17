@@ -36,7 +36,6 @@ CARO-AI
 │       └── js/
 |           ├── script.js       # Frontend game logic and API calls
 |           └── jquery.min.js   # DOM library 
-│
 ├── create-container.sh         # Build & run using Docker
 ├── run-app.sh                  # Run local
 ├── Dockerfile                  # Container
