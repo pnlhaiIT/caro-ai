@@ -22,6 +22,22 @@ body {
 h1 {
     color: #8b5e34;
     margin-top: 0;
+    margin-bottom: 5px;
+}
+
+span {
+    display: block;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 0.95em;
+    color: #5380cd;
+
+}
+
+b {
+    color: rgb(189, 42, 5);
+    font-style: italic;
+    font-family: Brush Script MT;
 }
 
 #boardWrapper {

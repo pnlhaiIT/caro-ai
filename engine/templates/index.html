@@ -6,13 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PnlhaiCSE-Game CARO-AI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
 </head>
 
 <body>
     <div class="container">
 
         <h1>CARO-AI 10X10</h1>
-
+        <span>Made by <b>CSE Phạm Nguyễn Long Hải</b> with 💗</span>
         <div id="difficultyPanel">
             <label><input type="radio" name="difficulty" value="-1"> Dễ</label>
             <label><input type="radio" name="difficulty" value="0" checked> Trung bình</label>
@@ -41,7 +43,7 @@
         <button id="startBtn" onclick="startGame()">🎮 Bắt đầu</button>
     </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 
 </html>

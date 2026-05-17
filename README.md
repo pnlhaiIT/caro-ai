@@ -18,32 +18,37 @@ The AI is implemented using the **Minimax algorithm with Alpha-Beta Pruning** an
 ---
 
 # Project Structure
+
 ```
 CARO-AI
 │
 ├── engine/
-│   ├── ai.py               # Core AI engine 
-│   ├── config_para.json    # Parameters 
-│   ├── board.py            # Board representation and game rules 
-│   ├── app.py              # Flask API server for moves
-│   ├── requirements.txt    # Dependencies
+│   ├── ai.py                   # Core AI engine 
+│   ├── config_para.json        # Parameters 
+│   ├── board.py                # Board representation and game rules 
+│   ├── app.py                  # Flask API server for moves
+│   ├── requirements.txt        # Dependencies
 │   ├── templates/
-│   │   └── index.html      # Main game page
+│   │   └── index.html          # Main game page
 │   └── static/
-│       ├── script.js       # Frontend game logic and API calls
-│       └── style.css       # UI styling
+│       ├── favicon.ico         # Browser icon
+│       ├── style.css           # UI styling
+│       └── js/
+|           ├── script.js       # Frontend game logic and API calls
+|           └── jquery.min.js   # DOM library 
 │
-├── create-container.sh     # Build & run using Docker
-├── run-app.sh              # Run local
-├── Dockerfile              # Container
-├── docker-compose.yaml     # Orchestration
-├── .gitignore              # Files ignored by Git
-└── README.md               # Documentation
+├── create-container.sh         # Build & run using Docker
+├── run-app.sh                  # Run local
+├── Dockerfile                  # Container
+├── docker-compose.yaml         # Orchestration
+├── .gitignore                  # Files ignored by Git
+└── README.md                   # Documentation
 ```
 
 ---
 
 # AI Core Flow
+
 ```
 The AI determines the best move using a sequence of steps:
 Player move
@@ -125,4 +130,4 @@ http://localhost:5100
 # Author
 
 Student project demonstrating classical Artificial Intelligence techniques in board game search.<br>
-Phạm Nguyễn Long Hải 
+<b>Phạm Nguyễn Long Hải</b> 
