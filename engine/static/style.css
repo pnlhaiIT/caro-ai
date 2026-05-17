@@ -37,7 +37,7 @@ span {
 b {
     color: rgb(189, 42, 5);
     font-style: italic;
-    font-family: Brush Script MT;
+    font-family: 'Times New Roman', Times, serif;
 }
 
 #boardWrapper {
