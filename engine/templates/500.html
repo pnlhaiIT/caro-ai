@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 - Server Error</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/error.css') }}">
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="glitch" data-text="500">500</div>
+
+        <h2>Internal Server Error</h2>
+        <p>Lỗi server nội bộ. Vui lòng liên hệ quản trị viên😵</p>
+
+        <button class="btn" onclick="location.reload()">Reload</button>
+    </div>
+
+</body>
+
+</html>

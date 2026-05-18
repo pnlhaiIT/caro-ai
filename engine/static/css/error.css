@@ -1,0 +1,98 @@
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #fff;
+    color: #0b0f1a;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    text-align: center
+}
+
+.glitch {
+    font-size: 120px;
+    font-weight: bold;
+    letter-spacing: 5px;
+    position: relative;
+    animation: flicker 2s infinite;
+}
+
+.glitch::before,
+.glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.glitch::before {
+    color: #ff004c;
+    animation: glitch 1.5s infinite alternate-reverse
+}
+
+.glitch::after {
+    color: #00ffe1;
+    animation: glitch 1.5s infinite alternate
+}
+
+h2 {
+    margin: 10px 0 0;
+    font-size: 24px
+}
+
+p {
+    color: #aaa
+}
+
+.btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: #ff004c;
+    border: 0;
+    color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: .2s
+}
+
+.btn:hover {
+    background: #ff3366
+}
+
+@keyframes glitch {
+    0% {
+        transform: translate(0)
+    }
+
+    25% {
+        transform: translate(-2px, -2px)
+    }
+
+    50% {
+        transform: translate(2px, 2px)
+    }
+
+    75% {
+        transform: translate(-1px, 1px)
+    }
+
+    100% {
+        transform: translate(1px, -1px)
+    }
+}
+
+@keyframes flicker {
+
+    0%,
+    100% {
+        opacity: 1
+    }
+
+    50% {
+        opacity: .85
+    }
+}

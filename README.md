@@ -27,15 +27,19 @@ CARO-AI
 │   ├── config_para.json        # Parameters 
 │   ├── board.py                # Board representation and game rules 
 │   ├── app.py                  # Flask API server for moves
-│   ├── requirements.txt        # Dependencies
-│   ├── templates/
-│   │   └── index.html          # Main game page
-│   └── static/
-│       ├── favicon.ico         # Browser icon
-│       ├── style.css           # UI styling
-│       └── js/
-|           ├── script.js       # Frontend game logic and API calls
-|           └── jquery.min.js   # DOM library 
+│   ├── requirements.txt        # Dependencies        
+│   ├── static                  
+│   │   ├── css                 
+│   │   │   ├── error.css       # Style err page 
+│   │   │   └── style.css       # UI styling
+│   │   ├── favicon.ico         # Browser icon
+│   │   └── js                  
+│   │       ├── jquery.min.js   # DOM library 
+│   │       └── script.js       # Frontend game logic and API calls
+│   └── templates               
+│       ├── 500.html            # Server error page
+│       └── index.html          # Main UI 
+|                               
 ├── create-container.sh         # Build & run using Docker
 ├── run-app.sh                  # Run local
 ├── Dockerfile                  # Container
