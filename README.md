@@ -28,15 +28,15 @@ CARO-AI
 │   ├── board.py                # Board representation and game rules 
 │   ├── app.py                  # Flask API server for moves
 │   ├── requirements.txt        # Dependencies        
-│   ├── static                  
-│   │   ├── css                 
+│   ├── static/                  
+│   │   ├── css/                 
 │   │   │   ├── error.css       # Style err page 
 │   │   │   └── style.css       # UI styling
 │   │   ├── favicon.ico         # Browser icon
-│   │   └── js                  
+│   │   └── js/                  
 │   │       ├── jquery.min.js   # DOM library 
 │   │       └── script.js       # Frontend game logic and API calls
-│   └── templates               
+│   └── templates/               
 │       ├── 500.html            # Server error page
 │       └── index.html          # Main UI 
 |                               
